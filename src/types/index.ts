@@ -87,7 +87,7 @@ export interface PenggunaLogin {
 
 export interface ResponsAutentikasi {
   user: PenggunaLogin;
-  token: string;
+  token?: string;
 }
 
 export interface Alamat {

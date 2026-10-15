@@ -28,7 +28,7 @@ export function buildQuery(params?: QueryParams): string {
 }
 
 export function resourcePath(collection: string, id: ResourceId): string {
-  return `${collection}/${encodeURIComponent(String(id))}`;
+  return `${collection.replace(/\/+$/, '')}/${encodeURIComponent(String(id))}`;
 }
 
 export function formDataFromFile(

@@ -131,6 +131,12 @@ Treat these as design recommendations, not instructions to blindly replace CSS v
 - **Responsive behavior:** content, cards, forms, and data tables must remain usable on small screens. Avoid clipped controls, overlapping actions, and unnecessary horizontal scrolling.
 - **Consistency:** use the spacing, radius, and sizing conventions already established by the supplied components.
 
+## Mobile-First and Responsive Design
+  Every design created or updated for Toko Sayur Alkadi must be fully responsive and work well on mobile phones, tablets, laptops, and desktop screens. Use a mobile-first approach: begin with a clear, usable small-screen layout, then progressively enhance spacing, columns, and visual density for larger screens. Do not treat mobile support as an optional refinement or create a desktop-only design.
+  On small screens, keep text readable, prevent horizontal page overflow, provide comfortable touch targets, and ensure buttons, inputs, menus, dialogs, and other interactive elements remain easy to use. Stack content vertically when needed, reduce unnecessary padding, and adapt multi-column layouts into fewer columns without losing important information. Images must resize and crop appropriately, while headings and long labels should wrap naturally rather than overlap or become clipped.
+  Navigation must remain accessible on mobile. Reuse the existing responsive navigation components, such as the supplied Sheet or Sidebar patterns, where appropriate instead of creating duplicate components. Forms should fit the viewport, tables should use a suitable compact or controlled-overflow presentation, and dialogs or sheets should not extend beyond the visible screen. Preserve the same brand colors, hierarchy, component behavior, and visual consistency across every breakpoint.
+  Test every page and component at narrow mobile widths as well as tablet and desktop widths. Check for overlapping content, clipped text, inaccessible controls, awkward image crops, excessive scrolling, and buttons that are too small to tap. All states—including loading, empty, validation, success, and error states—must also remain clear and usable on mobile.
+
 ## Component Styling Principles
 
 All required UI components are already provided. Use the existing shadcn/ui components and existing application components instead of building duplicates. Keep component behavior, variants, imports, and established project conventions intact. Apply design changes through supported props, existing variants, and theme tokens wherever possible.

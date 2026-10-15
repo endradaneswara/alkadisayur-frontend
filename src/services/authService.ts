@@ -1,8 +1,8 @@
 import {
   API_BASE_URL,
-  clearAuthToken,
+  clearAuthSession,
   request,
-  setAuthToken,
+  setAuthSession,
 } from './api';
 import type { ResponsApi, ResponsAutentikasi } from '@/types';
 
@@ -26,7 +26,7 @@ export async function register(
     'POST',
     payload,
   );
-  setAuthToken(response.data.token);
+  setAuthSession();
   return response;
 }
 
@@ -34,13 +34,13 @@ export async function login(
   payload: LoginPayload,
 ): Promise<ResponsApi<ResponsAutentikasi>> {
   const response = await request<ResponsAutentikasi>('/login', 'POST', payload);
-  setAuthToken(response.data.token);
+  setAuthSession();
   return response;
 }
 
 export async function logout(): Promise<ResponsApi<null>> {
   const response = await request<null>('/logout', 'POST');
-  clearAuthToken();
+  clearAuthSession();
   return response;
 }
 
@@ -48,4 +48,4 @@ export function googleUrl(): string {
   return `${API_BASE_URL}/auth/google`;
 }
 
-export { clearAuthToken as clearToken, setAuthToken as setToken };
+export { clearAuthSession as clearSession, setAuthSession as setSession };

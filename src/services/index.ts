@@ -1,10 +1,10 @@
 import {
-  clearToken,
+  clearSession,
   googleUrl,
   login,
   logout,
   register,
-  setToken,
+  setSession,
 } from './authService';
 import {
   addItemKeranjang,
@@ -101,7 +101,7 @@ import { forgotPassword, resetPassword, updatePassword } from './passwordService
 import { getProfile, updateProfile } from './profileService';
 
 export const api = {
-  auth: { register, login, logout, googleUrl, setToken, clearToken },
+  auth: { register, login, logout, googleUrl, setSession, clearSession },
   password: {
     forgot: forgotPassword,
     reset: resetPassword,
