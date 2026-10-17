@@ -15,167 +15,136 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, UsersIcon, CameraIcon, FileTextIcon, Settings2Icon, CircleHelpIcon, SearchIcon, DatabaseIcon, FileChartColumnIcon, FileIcon, CommandIcon } from "lucide-react"
+import {
+  BellIcon,
+  FileIcon,
+  FolderIcon,
+  LayoutDashboardIcon,
+  MapPin,
+  NotebookPen,
+  ShoppingCartMinus,
+  StarIcon,
+  UsersIcon,
+  Vegan,
+} from "lucide-react"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: (
-        <LayoutDashboardIcon
-        />
-      ),
-    },
-    {
-      title: "Lifecycle",
-      url: "#",
-      icon: (
-        <ListIcon
-        />
-      ),
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: (
-        <ChartBarIcon
-        />
-      ),
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: (
-        <FolderIcon
-        />
-      ),
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: (
-        <UsersIcon
-        />
-      ),
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: (
-        <CameraIcon
-        />
-      ),
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: (
-        <FileTextIcon
-        />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: (
-        <FileTextIcon
-        />
-      ),
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: (
-        <Settings2Icon
-        />
-      ),
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: (
-        <CircleHelpIcon
-        />
-      ),
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: (
-        <SearchIcon
-        />
-      ),
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: (
-        <DatabaseIcon
-        />
-      ),
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: (
-        <FileChartColumnIcon
-        />
-      ),
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: (
-        <FileIcon
-        />
-      ),
-    },
-  ],
-}
+import { hasAuthSession } from "@/services/api"
+import { getProfile } from "@/services/profileService"
+import type { PenggunaLogin } from "@/types"
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(null)
+
+  React.useEffect(() => {
+    let isCurrent = true
+    if (hasAuthSession()) {
+      void getProfile()
+        .then((res) => {
+          if (isCurrent) setCurrentUser(res.data)
+        })
+        .catch(() => undefined)
+    }
+    return () => {
+      isCurrent = false
+    }
+  }, [])
+
+  const isSuperAdmin = currentUser?.role === "superAdmin"
+
+  // Untuk admin cabang biasa: HANYA dashboard, penjualan, pesanan, dan notifikasi
+  const navMain = React.useMemo(() => {
+    if (!isSuperAdmin) {
+      return [
+        {
+          title: "Dashboard",
+          url: "/dashboard",
+          icon: <LayoutDashboardIcon />,
+        },
+        {
+          title: "Penjualan",
+          url: "/dashboard/penjualan",
+          icon: <NotebookPen />,
+        },
+        {
+          title: "Pesanan",
+          url: "/dashboard/pesanan",
+          icon: <ShoppingCartMinus />,
+        },
+        {
+          title: "Notifikasi",
+          url: "/dashboard/notifikasi",
+          icon: <BellIcon />,
+        },
+      ]
+    }
+
+    // Untuk Super Admin: semua menu termasuk produk & kategori
+    return [
+      {
+        title: "Dashboard",
+        url: "/dashboard",
+        icon: <LayoutDashboardIcon />,
+      },
+      {
+        title: "Penjualan",
+        url: "/dashboard/penjualan",
+        icon: <NotebookPen />,
+      },
+      {
+        title: "Pesanan",
+        url: "/dashboard/pesanan",
+        icon: <ShoppingCartMinus />,
+      },
+      {
+        title: "Notifikasi",
+        url: "/dashboard/notifikasi",
+        icon: <BellIcon />,
+      },
+      {
+        title: "Produk",
+        url: "/dashboard/produk",
+        icon: <FileIcon />,
+      },
+      {
+        title: "Kategori",
+        url: "/dashboard/kategori",
+        icon: <FolderIcon />,
+      },
+    ]
+  }, [isSuperAdmin])
+
+  const documents = React.useMemo(() => {
+    if (!isSuperAdmin) {
+      return []
+    }
+
+    return [
+      {
+        name: "Management Akun",
+        url: "/dashboard/user",
+        icon: <UsersIcon />,
+      },
+      {
+        name: "Management lokasi",
+        url: "/dashboard/lokasi",
+        icon: <MapPin />,
+      },
+      {
+        name: "Ulasan",
+        url: "/store/akun/ulasan",
+        icon: <StarIcon />,
+      },
+    ]
+  }, [isSuperAdmin])
+
+  const user = React.useMemo(() => {
+    return {
+      name: currentUser?.name || "Admin",
+      email: currentUser?.email || "admin@alkadi.com",
+      avatar: currentUser?.avatar || "/avatars/shadcn.jpg",
+    }
+  }, [currentUser])
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -183,21 +152,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton
               className="data-[slot=sidebar-menu-button]:p-1.5!"
-              render={<a href="#" />}
+              render={<a href="/store" />}
             >
-              <CommandIcon className="size-5!" />
-              <span className="text-base font-semibold">Acme Inc.</span>
+              <Vegan className="size-5!" />
+              <span className="text-base font-semibold">Alkadi</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={navMain} />
+        {documents.length > 0 && <NavDocuments items={documents} />}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} currentUser={currentUser} />
       </SidebarFooter>
     </Sidebar>
   )

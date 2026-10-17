@@ -62,6 +62,7 @@ export interface BarangCustomer {
   Keterangan: string | null;
   Foto: string | null;
   Status: StatusBarang;
+  Stok?: number;
 }
 
 export interface Pengguna {
@@ -83,6 +84,8 @@ export interface PenggunaLogin {
   no_hp: string | null;
   avatar: string | null;
   email_verified_at: string | null;
+  lokasi_id?: number | null;
+  lokasi?: Lokasi | null;
 }
 
 export interface ResponsAutentikasi {
@@ -163,6 +166,11 @@ export interface Pesanan {
   id: number;
   user_id: number;
   nomor_order: string;
+  pelanggan?: {
+    id: number;
+    nama: string;
+    email: string;
+  } | null;
   metode: MetodePesanan;
   status: StatusPesanan;
   total_harga: NilaiUang;
@@ -230,6 +238,23 @@ export interface Dashboard {
     stok_menipis: number;
     produk_tidak_tersedia: number;
   };
+  grafik_penjualan: DataGrafikPenjualan[];
+  pesanan_terbaru: Pesanan[];
+  lokasi_terpilih?: Lokasi | null;
+  penjualan_per_cabang?: {
+    id: number;
+    nama: string;
+    total_pesanan: number;
+    total_penjualan: NilaiUang;
+  }[];
+}
+
+export type RentangGrafik = "1h" | "7h" | "30h";
+
+export interface DataGrafikPenjualan {
+  tanggal: string;
+  total_penjualan: number;
+  total_pesanan: number;
 }
 
 export interface Penjualan {

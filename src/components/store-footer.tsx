@@ -8,7 +8,7 @@ export function StoreFooter() {
       className="border-t rounded-t-[1.75rem] border border-border bg-primary text-primary-foreground"
       id="kontak"
     >
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.3fr_0.8fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-[1536px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.3fr_0.8fr_1fr] lg:px-10 xl:px-12">
         <div>
           <Link
             aria-label="Alkadi Sayur, kembali ke atas"

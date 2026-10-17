@@ -1,5 +1,10 @@
 import { request, requestPaginated } from './api';
-import { resourcePath, type RentangTanggal, type ResourceId } from './apiHelpers';
+import {
+  buildQuery,
+  resourcePath,
+  type RentangTanggal,
+  type ResourceId,
+} from './apiHelpers';
 import type {
   Penjualan,
   ResponsApi,
@@ -7,16 +12,22 @@ import type {
   RingkasanPenjualan,
 } from '@/types';
 
+export interface PenjualanFilterParams extends RentangTanggal {
+  lokasi_id?: number | null;
+}
+
 export function listPenjualanAdmin(
-  params?: RentangTanggal,
+  params?: PenjualanFilterParams,
 ): Promise<ResponsApiPaginated<Penjualan>> {
   return requestPaginated<Penjualan>('/admin/penjualan', params);
 }
 
-export function getRingkasanPenjualanAdmin(): Promise<
-  ResponsApi<RingkasanPenjualan>
-> {
-  return request<RingkasanPenjualan>('/admin/penjualan/summary');
+export function getRingkasanPenjualanAdmin(
+  params?: PenjualanFilterParams,
+): Promise<ResponsApi<RingkasanPenjualan>> {
+  return request<RingkasanPenjualan>(
+    `/admin/penjualan/summary${buildQuery(params)}`,
+  );
 }
 
 export function getPenjualanAdmin(
@@ -26,15 +37,17 @@ export function getPenjualanAdmin(
 }
 
 export function listPenjualanSuperAdmin(
-  params?: RentangTanggal,
+  params?: PenjualanFilterParams,
 ): Promise<ResponsApiPaginated<Penjualan>> {
   return requestPaginated<Penjualan>('/penjualan', params);
 }
 
-export function getRingkasanPenjualanSuperAdmin(): Promise<
-  ResponsApi<RingkasanPenjualan>
-> {
-  return request<RingkasanPenjualan>('/penjualan/summary');
+export function getRingkasanPenjualanSuperAdmin(
+  params?: PenjualanFilterParams,
+): Promise<ResponsApi<RingkasanPenjualan>> {
+  return request<RingkasanPenjualan>(
+    `/penjualan/summary${buildQuery(params)}`,
+  );
 }
 
 export function getPenjualanSuperAdmin(

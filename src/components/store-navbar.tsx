@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   UserRound,
   X,
+  Vegan,
 } from "lucide-react";
 import {
   Avatar,
@@ -35,13 +36,18 @@ import { storeLinks } from "@/lib/store-links";
 import { clearAuthSession, hasAuthSession } from "@/services/api";
 import { logout } from "@/services/authService";
 import { getProfile } from "@/services/profileService";
+import { cn } from "@/lib/utils";
 import type { PenggunaLogin } from "@/types";
 
 interface StoreNavbarProps {
   cartCount?: number;
+  className?: string;
 }
 
-export function StoreNavbar({ cartCount = 0 }: StoreNavbarProps) {
+export function StoreNavbar({
+  cartCount = 0,
+  className,
+}: StoreNavbarProps) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<PenggunaLogin | null>(null);
@@ -136,8 +142,13 @@ export function StoreNavbar({ cartCount = 0 }: StoreNavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-black/10 bg-white/40 backdrop-blur-md">
-      <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+    <header
+      className={cn(
+        "sticky top-0 z-40 border-b border-black/10 bg-white/40 backdrop-blur-md",
+        className,
+      )}
+    >
+      <div className="mx-auto flex h-[76px] max-w-[1536px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 xl:px-12">
         <Link
           aria-label="Alkadi Sayur, beranda"
           className="flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
@@ -145,8 +156,9 @@ export function StoreNavbar({ cartCount = 0 }: StoreNavbarProps) {
           onClick={() => setMobileMenuOpen(false)}
         >
           <span className="flex flex-col">
-            <span className="font-heading text-lg leading-none font-bold tracking-tight text-primary">
-              ALKADI
+            <span className="flex items-center gap-2 font-heading text-lg leading-none font-bold tracking-tight text-primary">
+              <Vegan className="size-6" />
+              Alkadi
             </span>
           </span>
         </Link>

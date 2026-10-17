@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
+import { StoreShowcase } from "@/components/store-showcase";
 import { API_BASE_URL, hasAuthSession } from "@/services/api";
 import { addItemKeranjang } from "@/services/keranjangService";
 import { listBarang } from "@/services/barangService";
@@ -172,9 +173,20 @@ export default function StoreLandingPage() {
       <main>
         <section
           aria-labelledby="hero-title"
-          className="mx-auto grid min-h-[520px] max-w-7xl items-center gap-12 px-4 py-14 sm:min-h-[600px] sm:px-6 sm:py-20 lg:min-h-[620px] lg:grid-cols-[1fr_0.92fr] lg:gap-16 lg:px-8 lg:py-24"
+          className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
         >
-          <div className="store-enter flex flex-col items-start">
+          <div className="store-hero-background" aria-hidden="true">
+            <Image
+              alt=""
+              className="object-cover"
+              fill
+              priority
+              sizes="100vw"
+              src="/background-landing2.webp"
+            />
+          </div>
+          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-20 sm:px-6 sm:pt-36 sm:pb-28 lg:grid-cols-[1fr_0.92fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-32 xl:px-12">
+            <div className="store-enter flex flex-col items-start">
             <h1
               className="max-w-2xl font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl "
               id="hero-title"
@@ -207,12 +219,43 @@ export default function StoreLandingPage() {
                 Jelajahi kategori
               </Button>
             </div>
+
+            {/* Scroll indicator */}
+            <div className="mt-12 flex flex-col items-center gap-1.5 self-center sm:self-auto" aria-hidden="true">
+              <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-primary/60">Gulir ke bawah</span>
+              <div className="flex flex-col items-center gap-0.5 animate-bounce">
+                <span className="block h-5 w-px rounded-full bg-primary/30" />
+                <span className="block size-1.5 rounded-full bg-primary/50" />
+              </div>
+            </div>
+          </div>
+          </div>
+
+          {/* Decorative wave bottom transition */}
+          <div className="absolute inset-x-0 bottom-0 z-10 leading-none" aria-hidden="true">
+            <svg
+              viewBox="0 0 1440 80"
+              xmlns="http://www.w3.org/2000/svg"
+              preserveAspectRatio="none"
+              className="w-full h-16 sm:h-20"
+              style={{ display: "block" }}
+            >
+              <path
+                d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"
+                fill="hsl(var(--secondary) / 0.4)"
+                opacity="0.6"
+              />
+              <path
+                d="M0,55 C360,20 720,75 1080,45 C1260,30 1380,60 1440,55 L1440,80 L0,80 Z"
+                fill="hsl(var(--background))"
+              />
+            </svg>
           </div>
         </section>
 
         {(categoryError || productError) && (
           <div
-            className="mx-auto mb-8 max-w-7xl px-4 sm:px-6 lg:px-8"
+            className="mx-auto mb-8 max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12"
             role="alert"
           >
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -231,10 +274,10 @@ export default function StoreLandingPage() {
 
         <section
           aria-labelledby="category-title"
-          className="scroll-mt-24 bg-card py-16 sm:py-20"
+                  className="scroll-mt-24 bg-secondary/40 py-16 sm:py-20"
           id="kategori"
         >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
               <div>
                 <h2
@@ -283,16 +326,16 @@ export default function StoreLandingPage() {
                 : categories.slice(0, 6).map((category, index) => (
                     <button
                       aria-label={`Tampilkan produk kategori ${category.nama_kategori}`}
-                      className={`store-category-card group flex min-h-36 flex-col items-center justify-center rounded-2xl border p-4 text-center transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+                      className={`store-category-card group flex min-h-36 flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                         selectedCategory === category.id
-                          ? "border-primary bg-secondary"
+                          ? "border-primary bg-secondary shadow-xs"
                           : "border-border bg-background hover:border-primary/50 hover:bg-secondary/60"
                       }`}
                       key={category.id}
                       onClick={() => selectCategory(category.id)}
                       type="button"
                     >
-                      <span className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-card text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                      <span className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-card text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-xs">
                         {index % 2 === 0 ? (
                           <Leaf aria-hidden="true" className="size-5" />
                         ) : (
@@ -321,172 +364,163 @@ export default function StoreLandingPage() {
 
         <section
           aria-labelledby="featured-title"
-          className="scroll-mt-24 mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+          className="scroll-mt-24 w-full bg-primary text-white py-16 sm:py-24"
           id="produk-unggulan"
         >
-          <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2
-                className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
-                id="featured-title"
-              >
-                Produk unggulan kami
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-                Produk paling banyak dicari untuk kebutuhan dapur sehari-hari.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {selectedCategory !== null ? (
-                <Button
-                  onClick={() => setSelectedCategory(null)}
-                  size="sm"
-                  variant="outline"
+          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
+            <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
+              <div className="max-w-2xl">
+                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#bef264]">
+                  Pilihan Eksklusif Alkadi
+                </p>
+                <h2
+                  className="mt-3 font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl"
+                  id="featured-title"
                 >
-                  Tampilkan semua
-                  <X aria-hidden="true" data-icon="inline-end" />
-                </Button>
-              ) : null}
-              <Button
-                nativeButton={false}
-                render={<Link href="/store/produk" />}
-                size="sm"
-                variant="outline"
-              >
-                Semua produk
-                <ArrowRight aria-hidden="true" data-icon="inline-end" />
-              </Button>
-            </div>
-          </div>
-
-          {cartFeedback ? (
-            <p
-              aria-live="polite"
-              className={`mb-5 rounded-lg border px-4 py-3 text-sm ${
-                cartFeedbackIsError
-                  ? "border-destructive/30 bg-destructive/5 text-destructive"
-                  : "border-primary/20 bg-secondary text-primary"
-              }`}
-              role={cartFeedbackIsError ? "alert" : "status"}
-            >
-              {cartFeedback}
-            </p>
-          ) : null}
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
-            {isLoadingProducts
-              ? Array.from({ length: 4 }, (_, index) => (
-                  <Card
-                    className="overflow-hidden border-border py-0"
-                    key={`product-skeleton-${index}`}
-                  >
-                    <Skeleton className="aspect-[4/3] w-full rounded-none" />
-                    <CardContent className="flex flex-col gap-3 p-5">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-5 w-3/4" />
-                      <Skeleton className="h-5 w-1/3" />
-                      <Skeleton className="mt-2 h-10 w-full" />
-                    </CardContent>
-                  </Card>
-                ))
-              : featuredProducts.map((product) => {
-                  const isAdding = addingProductIds.includes(product.id);
-                  const imageFailed = failedImageIds.includes(product.id);
-
-                  return (
-                    <Card
-                      className="store-product-card border-border py-0"
-                      key={product.id}
+                  Kesehatan & kesegaran keluarga dimulai dari dapur.
+                </h2>
+              </div>
+              <div className="max-w-md text-left md:text-right">
+                <p className="text-sm leading-relaxed text-white/70 sm:text-base">
+                  Sayuran pilihan bermutu tinggi yang dipetik segar setiap pagi dari kebun mitra terpercaya untuk nutrisi terbaik keluarga.
+                </p>
+                <div className="mt-4 flex items-center justify-start gap-4 md:justify-end">
+                  {selectedCategory !== null ? (
+                    <Button
+                      className="rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                      onClick={() => setSelectedCategory(null)}
+                      size="sm"
+                      variant="outline"
                     >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
-                        {product.Foto && !imageFailed ? (
-                          <Image
-                            alt={product.NamaItem}
-                            className="object-cover"
-                            fill
-                            onError={() =>
-                              setFailedImageIds((current) =>
-                                current.includes(product.id)
-                                  ? current
-                                  : [...current, product.id],
-                              )
-                            }
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                            src={getProductImageUrl(product.Foto)}
-                            unoptimized
-                          />
-                        ) : (
-                          <div
-                            aria-label={`Foto ${product.NamaItem} belum tersedia`}
-                            className="flex h-full flex-col items-center justify-center gap-2 text-primary"
-                            role="img"
-                          >
-                            <ImagePlus aria-hidden="true" className="size-8" />
-                            <span className="text-xs font-medium">
-                              Foto produk belum tersedia
-                            </span>
-                          </div>
-                        )}
-                        <Badge className="absolute top-3 left-3" variant="secondary">
-                          Pilihan segar
-                        </Badge>
-                      </div>
-                      <CardContent className="flex flex-1 flex-col gap-2 p-5">
-                        {product.nama_kategori ? (
-                          <p className="text-xs font-medium text-muted-foreground">
-                            {product.nama_kategori}
-                          </p>
-                        ) : null}
-                        <h3 className="line-clamp-2 min-h-12 font-heading text-base leading-6 font-semibold text-foreground">
-                          {product.NamaItem}
-                        </h3>
-                        {product.Merek ? (
-                          <p className="truncate text-sm text-muted-foreground">
-                            {product.Merek}
-                          </p>
-                        ) : null}
-                        <p className="mt-auto pt-3 font-heading text-lg font-semibold text-primary">
-                          {formatRupiah(product.HargaJual)}
-                        </p>
-                      </CardContent>
-                      <CardFooter className="border-t border-border bg-card p-4">
-                        <Button
-                          className="h-10 w-full"
-                          disabled={isAdding}
-                          onClick={() => void handleAddToCart(product)}
-                          type="button"
-                        >
-                          {isAdding ? (
-                            "Menambahkan..."
-                          ) : (
-                            <>
-                              <Plus aria-hidden="true" data-icon="inline-start" />
-                              Tambah ke keranjang
-                            </>
-                          )}
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-            {!isLoadingProducts && featuredProducts.length === 0 ? (
-              <p className="col-span-full rounded-2xl border border-dashed border-border bg-card px-5 py-12 text-center text-sm leading-6 text-muted-foreground">
-                {productError
-                  ? "Produk unggulan akan tampil setelah katalog dapat dimuat."
-                  : selectedCategory !== null
-                    ? "Belum ada produk tersedia di kategori ini."
-                    : "Produk unggulan akan tampil di sini setelah tersedia."}
+                      Semua kategori
+                      <X aria-hidden="true" className="size-3.5 ml-1" />
+                    </Button>
+                  ) : null}
+                  <Link
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-white underline underline-offset-4 transition-colors hover:text-[#bef264]"
+                    href="/store/produk"
+                  >
+                    <span>Lihat Semua Produk</span>
+                    <ArrowRight aria-hidden="true" className="size-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            {cartFeedback ? (
+              <p
+                aria-live="polite"
+                className={`mb-6 rounded-2xl border px-4 py-3 text-sm backdrop-blur-xs ${
+                  cartFeedbackIsError
+                    ? "border-destructive/40 bg-destructive/15 text-red-200"
+                    : "border-emerald-400/30 bg-emerald-950/60 text-emerald-200"
+                }`}
+                role={cartFeedbackIsError ? "alert" : "status"}
+              >
+                {cartFeedback}
               </p>
             ) : null}
+
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  badgeType: "accent",
+                  image: "/sayur background1.webp",
+                  fallbackTitle: "Paket Sayur Daun Hijau Segar",
+                  fallbackPrice: 15000,
+                },
+                {
+                  badgeType: "subtle",
+                  image: "/sayur-background2.webp",
+                  fallbackTitle: "Brokoli & Kembang Kol Pilihan",
+                  fallbackPrice: 22000,
+                },
+                {
+                  badge: "Favorit",
+                  badgeType: "subtle",
+                  image: "/sayur-background3.webp",
+                  fallbackTitle: "Aneka Rempah & Bumbu Dapur",
+                  fallbackPrice: 18000,
+                },
+                {
+                  badgeType: "subtle",
+                  image: "/sayur background4.webp",
+                  fallbackTitle: "Wortel & Umbi Segar Organik",
+                  fallbackPrice: 20000,
+                },
+              ].map((config, index) => {
+                const product = featuredProducts[index];
+                const title = product?.NamaItem || config.fallbackTitle;
+                const price = product?.HargaJual || config.fallbackPrice;
+                const productId = product?.id;
+                const isAdding = productId ? addingProductIds.includes(productId) : false;
+
+                return (
+                  <div
+                    className="group relative flex flex-col items-center justify-between rounded-3xl border border-white/10 bg-muted-foreground p-6 text-center shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:border-white/30 hover:shadow-2xl"
+                    key={config.image}
+                  >
+                    <h3 className="line-clamp-2 min-h-[3rem] font-heading text-lg font-semibold tracking-tight text-white transition-colors group-hover:text-[#bef264] sm:text-xl">
+                      {productId ? (
+                        <Link href={`/store/produk/${productId}`}>
+                          {title}
+                        </Link>
+                      ) : (
+                        title
+                      )}
+                    </h3>
+
+                    <div className="relative my-5 aspect-square w-full max-w-[210px] overflow-hidden rounded-2xl bg-black/25 shadow-xl ring-1 ring-white/15">
+                      <Image
+                        alt={title}
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        fill
+                        loading={index === 0 ? "eager" : "lazy"}
+                        priority={index === 0}
+                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 22vw"
+                        src={config.image}
+                      />
+                    </div>
+
+                    <Button
+                      className="mt-2 h-10 w-full max-w-[170px] rounded-full border border-white/20 bg-white/12 text-xs font-semibold text-white shadow-xs backdrop-blur-xs transition-all hover:bg-white/25 sm:text-sm"
+                      disabled={isAdding}
+                      onClick={() => {
+                        if (product) {
+                          void handleAddToCart(product);
+                        } else {
+                          router.push("/store/produk");
+                        }
+                      }}
+                      type="button"
+                    >
+                      {isAdding ? (
+                        "Menambahkan..."
+                      ) : (
+                        <>
+                          <Plus aria-hidden="true" className="size-4" />
+                          Beli Sekarang
+                        </>
+                      )}
+                    </Button>
+
+                    {/* Subtext: Starting price */}
+                    <p className="mt-3 text-xs font-medium text-white/60">
+                      Mulai dari {formatRupiah(price)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
         <section
           aria-labelledby="benefits-title"
-          className="scroll-mt-24 border-y border-border bg-card py-16 sm:py-20"
+                  className="scroll-mt-24 border-y border-border bg-secondary/60 py-16 sm:py-20"
           id="keunggulan"
         >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto mb-10 max-w-2xl text-center">
               <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
                 Belanja terasa lebih mudah
@@ -533,13 +567,13 @@ export default function StoreLandingPage() {
 
                 return (
                   <div
-                    className="rounded-2xl border border-border bg-background p-5 sm:p-6"
+                    className="group rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-md hover:border-primary/40"
                     key={benefit.title}
                   >
-                    <span className="mb-5 flex size-11 items-center justify-center rounded-xl bg-secondary text-primary">
-                      <BenefitIcon aria-hidden="true" className="size-5" />
+                    <span className="mb-5 flex size-12 items-center justify-center rounded-2xl bg-secondary/50 text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-xs">
+                      <BenefitIcon aria-hidden="true" className="size-6 transition-transform duration-300" />
                     </span>
-                    <h3 className="font-heading text-base font-semibold">
+                    <h3 className="font-heading text-base font-semibold transition-colors group-hover:text-primary">
                       {benefit.title}
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-muted-foreground">
@@ -552,30 +586,8 @@ export default function StoreLandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-          <div className="flex flex-col items-start justify-between gap-6 rounded-[1.75rem] border border-border bg-secondary p-7 sm:p-10 md:flex-row md:items-center">
-            <div className="max-w-2xl">
-              <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
-                Mulai dari kebutuhan hari ini
-              </p>
-              <h2 className="mt-3 font-heading text-3xl leading-tight font-semibold tracking-tight text-primary sm:text-4xl">
-                Siapkan hidangan favorit bersama Alkadi.
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-                Pilih kategori, temukan produk, lalu lanjutkan belanja Anda.
-              </p>
-            </div>
-            <Button
-              className="h-11 shrink-0 px-5"
-              nativeButton={false}
-              render={<Link href="#kategori" />}
-              size="lg"
-            >
-              Jelajahi toko
-              <ArrowRight aria-hidden="true" data-icon="inline-end" />
-            </Button>
-          </div>
-        </section>
+        {/* Showcase Gerai Toko 1-6 (Seed.com style experience carousel) */}
+        <StoreShowcase />
       </main>
 
       <StoreFooter />

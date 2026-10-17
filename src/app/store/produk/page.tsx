@@ -183,7 +183,7 @@ export default function StoreProductsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <StoreNavbar />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <main className="mx-auto max-w-[1536px] px-4 py-8 sm:px-6 sm:py-10 lg:px-10 xl:px-12">
         <nav
           aria-label="Breadcrumb"
           className="mb-6 text-sm text-muted-foreground"
@@ -200,42 +200,42 @@ export default function StoreProductsPage() {
         </nav>
 
         <section aria-labelledby="products-title">
-          <div className="mb-7 max-w-2xl">
+          <div className="mb-7 max-w-3xl">
             <p className="text-xs font-semibold tracking-[0.16em] text-primary uppercase">
               Segar untuk setiap hidangan
             </p>
             <h1
-              className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
+              className="mt-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
               id="products-title"
             >
               Semua produk
             </h1>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
-              Pilih sayur dan kebutuhan dapur favorit Anda dari katalog Alkadi.
+            <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
+              Pilih aneka sayur segar dan kebutuhan dapur berkualitas langsung dari katalog Alkadi.
             </p>
           </div>
 
-          <div className="mb-6 flex justify-center p-4 sm:p-5">
-            <div className="flex w-full max-w-3xl items-center gap-3">
+          <div className="mb-8 flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-xs sm:flex-row sm:items-center sm:p-4">
+            <div className="flex flex-1 items-center gap-3">
               <label className="relative min-w-0 flex-1">
                 <Search
                   aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                  className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
                   aria-label="Cari produk"
-                  className="h-10 w-full bg-card pl-10 text-sm placeholder:text-muted-foreground sm:text-base"
+                  className="h-10 w-full rounded-xl border-border/80 bg-background pl-10 text-sm placeholder:text-muted-foreground sm:text-base"
                   onChange={(event) => {
                     setSearchTerm(event.target.value);
                     selectPage(1);
                   }}
-                  placeholder="Cari produk, merek, atau kategori"
+                  placeholder="Cari produk atau kategori..."
                   type="search"
                   value={searchTerm}
                 />
               </label>
 
-              <div className="w-40 shrink-0 sm:w-52">
+              <div className="w-44 shrink-0 sm:w-56">
                 <Select
                   items={[
                     { label: "Semua kategori", value: "all" },
@@ -257,9 +257,9 @@ export default function StoreProductsPage() {
                 >
                   <SelectTrigger
                     aria-label="Filter kategori"
-                    className="size-10 w-full bg-card"
+                    className="h-10 w-full rounded-xl border-border/80 bg-background"
                   >
-                    <SelectValue placeholder="Kategori" />
+                    <SelectValue placeholder="Semua kategori" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
@@ -278,12 +278,13 @@ export default function StoreProductsPage() {
                 </Select>
               </div>
             </div>
-            {categoryError ? (
-              <p className="text-sm text-destructive" role="alert">
-                Filter kategori belum dapat dimuat: {categoryError}
-              </p>
-            ) : null}
           </div>
+
+          {categoryError ? (
+            <p className="mb-4 text-sm text-destructive" role="alert">
+              Filter kategori belum dapat dimuat: {categoryError}
+            </p>
+          ) : null}
 
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <p aria-live="polite" className="text-sm text-muted-foreground">
@@ -313,17 +314,17 @@ export default function StoreProductsPage() {
             </p>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {isLoading
-              ? Array.from({ length: 8 }, (_, index) => (
+              ? Array.from({ length: 12 }, (_, index) => (
                   <div
-                    className="overflow-hidden rounded-xl border border-border bg-card p-4"
+                    className="overflow-hidden rounded-2xl border border-border bg-card p-3 sm:p-4"
                     key={`product-skeleton-${index}`}
                   >
-                    <Skeleton className="aspect-[4/3] w-full" />
-                    <Skeleton className="mt-4 h-4 w-1/3" />
-                    <Skeleton className="mt-3 h-5 w-3/4" />
-                    <Skeleton className="mt-6 h-10 w-full" />
+                    <Skeleton className="aspect-[4/3] w-full rounded-xl" />
+                    <Skeleton className="mt-3 h-4 w-1/3" />
+                    <Skeleton className="mt-2 h-5 w-3/4" />
+                    <Skeleton className="mt-4 h-9 w-full rounded-xl" />
                   </div>
                 ))
               : filteredProducts.map((product) => (
