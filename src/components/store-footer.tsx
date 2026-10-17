@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowDown, Clock3, MapPin, Sprout, UserRound } from "lucide-react";
+import { ArrowDown, Clock3, MapPin, Sprout, UserRound, Vegan } from "lucide-react";
 import { storeLinks } from "@/lib/store-links";
 
 export function StoreFooter() {
@@ -16,14 +16,14 @@ export function StoreFooter() {
             href="/store"
           >
             <span className="flex size-11 items-center justify-center rounded-2xl bg-primary-foreground/15">
-              <Sprout aria-hidden="true" className="size-6" />
+              <Vegan aria-hidden="true" className="size-6" />
             </span>
             <span className="flex flex-col">
               <span className="font-heading text-lg leading-none font-semibold">
-                alkadi
+                Alkadi
               </span>
               <span className="mt-1 text-[10px] leading-none font-medium tracking-[0.16em] uppercase opacity-75">
-                toko sayur
+                Fresh Market
               </span>
             </span>
           </Link>

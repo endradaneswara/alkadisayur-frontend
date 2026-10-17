@@ -441,15 +441,6 @@ export default function ContactPage() {
 
                     <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                       <Button
-                        className="flex-1"
-                        disabled={isSubmitting}
-                        size="lg"
-                        type="submit"
-                      >
-                        <Send aria-hidden="true" data-icon="inline-start" />
-                        {isSubmitting ? "Mengirim..." : "Kirim Formulir"}
-                      </Button>
-                      <Button
                         className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         size="lg"
                         type="button"

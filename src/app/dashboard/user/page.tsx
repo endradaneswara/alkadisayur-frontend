@@ -91,7 +91,7 @@ function RoleBadge({ role }: { role: RolePengguna }) {
     return (
       <Badge className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20">
         <ShieldCheck className="mr-1 size-3" />
-        Admin Cabang
+        Admin
       </Badge>
     );
   }
@@ -112,23 +112,19 @@ export default function UserManagementPage() {
   const [lastPage, setLastPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
 
-  // Filters
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filterRole, setFilterRole] = React.useState<string>("semua");
 
-  // Loading & status
   const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isUpdatingRole, setIsUpdatingRole] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
-  // Sheet edit role state
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<Pengguna | null>(null);
   const [selectedRole, setSelectedRole] = React.useState<RolePengguna>("customer");
 
-  // Check auth
   React.useEffect(() => {
     let isCurrent = true;
     if (!hasAuthSession()) {
@@ -192,14 +188,12 @@ export default function UserManagementPage() {
     });
   }, [userList, searchQuery, filterRole]);
 
-  // Handle open role sheet
   const handleOpenEdit = (user: Pengguna) => {
     setSelectedUser(user);
     setSelectedRole(user.role);
     setSheetOpen(true);
   };
 
-  // Submit role update
   const handleSaveRole = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
@@ -243,7 +237,6 @@ export default function UserManagementPage() {
         <SiteHeader />
 
         <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-          {/* Header */}
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -255,7 +248,6 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          {/* Alert Success */}
           {successMessage && (
             <Alert className="border-primary/20 bg-primary/5 text-primary">
               <ShieldCheck className="size-4 text-primary" />

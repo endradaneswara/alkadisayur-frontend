@@ -194,9 +194,6 @@ export default function CheckoutPage() {
           Kembali ke keranjang
         </Button>
         <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            Langkah terakhir
-          </p>
           <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
             Checkout
           </h1>

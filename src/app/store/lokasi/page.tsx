@@ -75,7 +75,6 @@ export default function LokasiPage() {
         }
       })
       .catch(() => {
-        // Fallback
       })
       .finally(() => {
         if (isCurrent) {
@@ -97,12 +96,10 @@ export default function LokasiPage() {
 
   const currentSlide = branchSlides[activeSlide];
 
-  // Koordinat lokasi dari API yang valid
   const validLocations = apiLocations.filter(
     (loc) => !isNaN(Number(loc.latitude)) && !isNaN(Number(loc.longitude)),
   );
 
-  // Jika tidak ada dari API, fallback ke branch slides
   const mapCenter: [number, number] =
     validLocations.length > 0
       ? [Number(validLocations[0].longitude), Number(validLocations[0].latitude)]
@@ -113,7 +110,6 @@ export default function LokasiPage() {
       <StoreNavbar />
 
       <main>
-        {/* HERO SECTION — Matching Landing Page Hero Style */}
         <section
           aria-labelledby="lokasi-hero-title"
           className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
@@ -146,7 +142,6 @@ export default function LokasiPage() {
                 keluarga.
               </p>
 
-              {/* Quick Branch Info Badge */}
               <div className="mt-6 flex flex-wrap items-center gap-4 rounded-xl border border-border/80 bg-background/80 p-4 backdrop-blur-md">
                 <div className="flex items-center gap-2.5 text-sm font-medium">
                   <MapPin aria-hidden="true" className="size-4 text-primary" />
@@ -169,31 +164,9 @@ export default function LokasiPage() {
                   <MapPin aria-hidden="true" data-icon="inline-start" />
                   Lihat Peta Lokasi
                 </Button>
-                <Button
-                  className="h-11 px-5"
-                  nativeButton={false}
-                  render={
-                    <a
-                      href={
-                        currentSlide.lat && currentSlide.lng
-                          ? `https://www.google.com/maps/search/?api=1&query=${currentSlide.lat},${currentSlide.lng}`
-                          : "#peta-lokasi"
-                      }
-                      rel="noreferrer"
-                      target="_blank"
-                    />
-                  }
-                  size="lg"
-                  variant="outline"
-                >
-                  <Navigation aria-hidden="true" data-icon="inline-start" />
-                  Petunjuk Arah
-                  <ExternalLink aria-hidden="true" data-icon="inline-end" />
-                </Button>
               </div>
             </div>
 
-            {/* Slider Switcher Card */}
             <div className="store-enter store-enter-delay-1 flex flex-col gap-4">
               <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
                 <Image
@@ -218,7 +191,6 @@ export default function LokasiPage() {
                 </div>
               </div>
 
-              {/* Thumbnails / Slider control */}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Button
@@ -247,7 +219,7 @@ export default function LokasiPage() {
                     <ChevronRight aria-hidden="true" className="size-4" />
                   </Button>
                   <span className="text-xs font-medium text-muted-foreground">
-                    {activeSlide + 1} dari {branchSlides.length} cabang
+                    {activeSlide + 1} dari {branchSlides.length}
                   </span>
                 </div>
 
@@ -288,7 +260,6 @@ export default function LokasiPage() {
           </div>
         </section>
 
-        {/* SECTION PETA INTERAKTIF DENGAN MARKER */}
         <section
           id="peta-lokasi"
           aria-labelledby="store-map-title"
@@ -319,7 +290,6 @@ export default function LokasiPage() {
             </Button>
           </div>
 
-          {/* Map Container */}
           <div
             aria-label="Peta lokasi toko Alkadi"
             className="h-[460px] overflow-hidden rounded-2xl border border-border sm:h-[560px] shadow-lg"
@@ -328,7 +298,6 @@ export default function LokasiPage() {
             <Map className="h-full w-full" center={mapCenter} zoom={11}>
               <MapControls position="bottom-right" showCompass />
 
-              {/* Render Markers dari Data Database API */}
               {validLocations.length > 0
                 ? validLocations.map((loc) => {
                     const lat = Number(loc.latitude);
@@ -343,15 +312,12 @@ export default function LokasiPage() {
                       <MapMarker key={loc.id} latitude={lat} longitude={lng}>
                         <MarkerContent>
                           <div className="group relative flex flex-col items-center">
-                            {/* Label Cabang */}
                             <span className="mb-1.5 rounded-md bg-background/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-md ring-1 ring-border whitespace-nowrap">
                               {loc.nama}
                             </span>
-                            {/* Pin Icon */}
                             <div className="relative flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/30 transition-transform group-hover:scale-110">
                               <Store className="size-5" />
                             </div>
-                            {/* Arrow Tip */}
                             <div className="-mt-1 size-2 rotate-45 bg-primary" />
                           </div>
                         </MarkerContent>
@@ -382,7 +348,7 @@ export default function LokasiPage() {
                       </MapMarker>
                     );
                   })
-                : /* Fallback Markers dari branchSlides jika API belum siap */
+                : 
                   branchSlides.map((branch) => {
                     const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                       `${branch.lat},${branch.lng}`,

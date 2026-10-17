@@ -63,7 +63,6 @@ export function StoreAccountNav({
 
   return (
     <div className="mb-8 flex flex-col gap-6">
-      {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
         <Link className="hover:text-primary transition-colors" href="/store">
           Beranda
@@ -84,7 +83,6 @@ export function StoreAccountNav({
         ) : null}
       </nav>
 
-      {/* Header Banner */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
@@ -105,7 +103,6 @@ export function StoreAccountNav({
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
 
-      {/* Navigation Tabs */}
       <div className="flex w-full overflow-x-auto border-b border-border pb-px scrollbar-none">
         <nav className="flex items-center gap-2" aria-label="Menu akun pengguna">
           {accountTabs.map((tab) => {

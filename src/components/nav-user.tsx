@@ -98,21 +98,18 @@ export function NavUser({
   );
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
-  // Sync with initialCurrentUser if provided
   React.useEffect(() => {
     if (initialCurrentUser) {
       setProfileData(initialCurrentUser);
     }
   }, [initialCurrentUser]);
 
-  // Fetch full profile if not yet loaded or when opening sheet
   const fetchProfile = React.useCallback(async () => {
     if (!hasAuthSession()) return;
     try {
       const res = await getProfile();
       setProfileData(res.data);
     } catch {
-      // silently ignore
     }
   }, []);
 
@@ -240,7 +237,6 @@ export function NavUser({
         </SidebarMenuItem>
       </SidebarMenu>
 
-      {/* Sheet Detail Akun & Lokasi Toko */}
       <Sheet open={profileSheetOpen} onOpenChange={setProfileSheetOpen}>
         <SheetContent className="w-full sm:max-w-md overflow-y-auto p-6">
           <SheetHeader className="mb-6">
@@ -254,7 +250,6 @@ export function NavUser({
           </SheetHeader>
 
           <div className="flex flex-col gap-6">
-            {/* Profil Card */}
             <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-xs">
               <div className="flex items-center gap-3">
                 <Avatar className="size-14 border border-border">
@@ -302,7 +297,6 @@ export function NavUser({
               </div>
             </div>
 
-            {/* Informasi Lokasi Toko */}
             <div className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <Store className="size-4 text-primary" />
@@ -393,7 +387,6 @@ export function NavUser({
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex items-center gap-2 pt-2 border-t border-border">
               <Button
                 type="button"
