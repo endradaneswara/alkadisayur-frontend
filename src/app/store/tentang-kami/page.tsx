@@ -131,7 +131,6 @@ export default function TentangKamiPage() {
       <StoreNavbar />
 
       <main>
-        {/* HERO */}
         <section
           aria-labelledby="about-hero-title"
           className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
@@ -149,10 +148,6 @@ export default function TentangKamiPage() {
 
           <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-24 xl:px-12">
             <div className="store-enter flex flex-col items-start">
-              <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                <Store aria-hidden="true" className="size-3.5" />
-                Mengenal Alkadi
-              </span>
 
               <h1
                 className="mt-4 max-w-2xl font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl"
@@ -237,7 +232,6 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        {/* CERITA ALKADI */}
         <section
           id="cerita-alkadi"
           aria-labelledby="story-title"
@@ -314,7 +308,6 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        {/* VISI & MISI */}
         <section className="border-y border-border bg-card py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
@@ -390,7 +383,6 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        {/* KOMITMEN */}
         <section
           aria-labelledby="commitments-title"
           className="mx-auto max-w-[1536px] px-4 py-16 sm:px-6 sm:py-20 lg:px-10 lg:py-24 xl:px-12"
@@ -434,7 +426,6 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        {/* KEUNGGULAN */}
         <section className="border-t border-border bg-card py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
@@ -471,13 +462,11 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        {/* SECTION ULASAN PELANGGAN — horizontal scroll */}
         <section
           aria-labelledby="reviews-title"
           className="overflow-hidden border-t border-border bg-background py-16 sm:py-20 lg:py-24"
         >
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
-            {/* Header */}
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div>
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -495,7 +484,6 @@ export default function TentangKamiPage() {
                 </p>
               </div>
 
-              {/* Rating Summary + Arrow Controls */}
               <div className="flex items-center gap-6">
                 {!isLoadingReviews && reviews.length > 0 && (
                   <div className="hidden items-center gap-3 sm:flex">
@@ -537,7 +525,6 @@ export default function TentangKamiPage() {
               </div>
             </div>
 
-            {/* Horizontal Scroll Strip */}
             <div className="mt-10">
               {isLoadingReviews ? (
                 <div className="flex gap-5">
@@ -579,20 +566,16 @@ export default function TentangKamiPage() {
                         key={review.id}
                         className="w-80 shrink-0 snap-start rounded-3xl border border-border bg-card p-6 transition-all duration-200 hover:border-primary/50 hover:shadow-lg sm:w-96"
                       >
-                        {/* Quote icon */}
                         <Quote className="size-7 text-primary/30" />
 
-                        {/* Komentar */}
                         <p className="mt-3 text-sm leading-relaxed text-muted-foreground line-clamp-4">
                           {review.komentar || "Produk sangat segar dan berkualitas. Pelayanan memuaskan!"}
                         </p>
 
-                        {/* Rating bintang */}
                         <div className="mt-4">
                           <StarRating rating={review.rating} />
                         </div>
 
-                        {/* Profil reviewer */}
                         <div className="mt-5 flex items-center gap-3 border-t border-border pt-4">
                           <Avatar className="size-10 border border-border">
                             <AvatarFallback className="bg-primary/10 font-bold text-primary">
@@ -620,7 +603,6 @@ export default function TentangKamiPage() {
               )}
             </div>
 
-            {/* CTA tulis ulasan */}
             {!isLoadingReviews && reviews.length > 0 && (
               <div className="mt-8 flex justify-center">
                 <Button
