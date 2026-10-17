@@ -56,7 +56,7 @@ export function StoreFooter() {
           <div className="mt-4 flex flex-col gap-4 text-sm text-primary-foreground/75">
             <p className="flex items-start gap-3">
               <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-              <span>Alamat toko akan ditambahkan.</span>
+              <span>Jl. Raya Peniron, Kalimacan, Peniron, Pejagoan, Kebumen</span>
             </p>
             <p className="flex items-start gap-3">
               <Clock3
@@ -77,7 +77,7 @@ export function StoreFooter() {
       </div>
       <div className="border-t border-primary-foreground/15">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-primary-foreground/70 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-          <p>© {new Date().getFullYear()} Toko Sayur Alkadi.</p>
+          <p>© {new Date().getFullYear()} Alkadi Fresh Market</p>
           <a
             className="inline-flex w-fit items-center gap-2 hover:text-primary-foreground focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
             href="#hero-title"

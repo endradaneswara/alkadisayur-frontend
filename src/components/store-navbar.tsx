@@ -276,8 +276,6 @@ export function StoreNavbar({
             ) : null}
           </Button>
 
-          <ModeToggle />
-
           <Button
             aria-expanded={mobileMenuOpen}
             aria-label={mobileMenuOpen ? "Tutup menu" : "Buka menu"}
@@ -292,6 +290,8 @@ export function StoreNavbar({
               <Menu aria-hidden="true" />
             )}
           </Button>
+
+          <ModeToggle />
         </div>
       </div>
 

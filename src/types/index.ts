@@ -24,7 +24,6 @@ export interface Kategori {
   updated_at?: string | null;
 }
 
-/** Data produk yang dikirim API untuk admin. */
 export interface Barang {
   id: number;
   kategori_id: number;
@@ -46,11 +45,6 @@ export interface Barang {
   updated_at?: string | null;
 }
 
-/**
- * Data produk untuk customer.
- * API customer tidak menyertakan stok, kode item, barcode, SKU,
- * rak, atau harga beli.
- */
 export interface BarangCustomer {
   id: number;
   kategori_id: number;
@@ -75,7 +69,6 @@ export interface Pengguna {
   updated_at?: string | null;
 }
 
-/** Bentuk pengguna pada respons login dan registrasi. */
 export interface PenggunaLogin {
   id: number;
   name: string;
@@ -110,6 +103,7 @@ export interface Lokasi {
   latitude: NilaiUang;
   longitude: NilaiUang;
   deskripsi: string | null;
+  link_gmaps?: string | null;
   biaya_pengiriman: NilaiUang;
   created_at?: string | null;
   updated_at?: string | null;
@@ -283,14 +277,12 @@ export interface RingkasanPenjualan {
   total_pendapatan: NilaiUang;
 }
 
-/** Respons standar endpoint API non-paginated. */
 export interface ResponsApi<T> {
   success: boolean;
   message: string;
   data: T;
 }
 
-/** Respons standar endpoint API paginated Laravel. */
 export interface ResponsApiPaginated<T> {
   success: boolean;
   message: string;

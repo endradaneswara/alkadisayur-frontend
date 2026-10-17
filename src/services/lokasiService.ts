@@ -7,6 +7,7 @@ export interface LokasiPayload {
   latitude: number;
   longitude: number;
   deskripsi?: string | null;
+  link_gmaps?: string | null;
   biaya_pengiriman: number;
 }
 

@@ -49,7 +49,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
 
   return (
     <Card className="group store-product-card flex h-full flex-col overflow-hidden rounded-2xl border border-border/80 bg-card py-0 shadow-xs transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
-      {/* 1. Gambar Produk dengan Badge Status & Stok */}
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-secondary/50">
         {product.Foto && !imageFailed ? (
           <Image
@@ -74,7 +73,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           </div>
         )}
 
-        {/* 2. Status Badge */}
         <div className="absolute top-2.5 left-2.5 z-10">
           <Badge
             className={`border-none px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider shadow-xs backdrop-blur-xs sm:text-[11px] ${
@@ -87,7 +85,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           </Badge>
         </div>
 
-        {/* 3. Stok Badge (Top Right) */}
         {product.Stok !== undefined && product.Stok !== null ? (
           <div className="absolute top-2.5 right-2.5 z-10">
             <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-xs backdrop-blur-xs sm:text-[11px]">
@@ -98,9 +95,7 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
         ) : null}
       </div>
 
-      {/* Konten Card: Kategori, Nama Produk, Stok, dan Harga SAJA */}
       <CardContent className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
-        {/* 4. Kategori & Stok Counter */}
         <div className="flex items-center justify-between gap-1.5">
           <span className="inline-block max-w-[65%] truncate rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-primary uppercase sm:text-[11px]">
             {formatCategory(product.nama_kategori)}
@@ -110,7 +105,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           </span>
         </div>
 
-        {/* 5. Nama Produk */}
         <h3 className="line-clamp-2 min-h-[2.5rem] text-sm font-semibold leading-snug text-foreground transition-colors group-hover:text-primary sm:text-base">
           <Link
             className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
@@ -120,7 +114,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           </Link>
         </h3>
 
-        {/* 6. Harga Produk SAJA */}
         <div className="mt-auto pt-2">
           <p className="font-heading text-base font-bold tracking-tight text-primary sm:text-lg">
             {formatRupiah(product.HargaJual)}
@@ -128,7 +121,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
         </div>
       </CardContent>
 
-      {/* Aksi Tambah ke Keranjang */}
       <CardFooter className="flex-col items-stretch gap-1.5 border-t border-border/80 p-2.5 sm:p-3">
         <Button
           className="h-9 w-full gap-1.5 rounded-xl text-xs font-medium sm:text-sm"

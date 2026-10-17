@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Compass,
+  ExternalLink,
   MapPin,
   Pencil,
   Plus,
@@ -81,6 +82,7 @@ interface LokasiFormState {
   longitude: string;
   biaya_pengiriman: string;
   deskripsi: string;
+  link_gmaps: string;
 }
 
 const EMPTY_FORM: LokasiFormState = {
@@ -89,6 +91,7 @@ const EMPTY_FORM: LokasiFormState = {
   longitude: "",
   biaya_pengiriman: "0",
   deskripsi: "",
+  link_gmaps: "",
 };
 
 export default function LokasiManagementPage() {
@@ -193,6 +196,7 @@ export default function LokasiManagementPage() {
       longitude: String(lokasi.longitude ?? ""),
       biaya_pengiriman: String(lokasi.biaya_pengiriman ?? 0),
       deskripsi: lokasi.deskripsi ?? "",
+      link_gmaps: lokasi.link_gmaps ?? "",
     });
     setFormError(null);
     setSheetOpen(true);
@@ -232,6 +236,7 @@ export default function LokasiManagementPage() {
       longitude: lng,
       biaya_pengiriman: biaya,
       deskripsi: form.deskripsi.trim() || null,
+      link_gmaps: form.link_gmaps.trim() || null,
     };
 
     try {
@@ -462,10 +467,23 @@ export default function LokasiManagementPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
-                              <Compass className="size-3 text-muted-foreground/60" />
-                              {Number(lokasi.latitude).toFixed(4)}, {Number(lokasi.longitude).toFixed(4)}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className="flex items-center gap-1 font-mono text-xs text-muted-foreground">
+                                <Compass className="size-3 text-muted-foreground/60" />
+                                {Number(lokasi.latitude).toFixed(4)}, {Number(lokasi.longitude).toFixed(4)}
+                              </span>
+                              {lokasi.link_gmaps ? (
+                                <a
+                                  href={lokasi.link_gmaps}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                                >
+                                  <ExternalLink className="size-2.5" />
+                                  Buka Google Maps
+                                </a>
+                              ) : null}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Badge
@@ -682,6 +700,24 @@ export default function LokasiManagementPage() {
                   rows={3}
                   className="w-full rounded-lg border border-input bg-card px-3 py-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 />
+              </div>
+
+              {/* Link Google Maps */}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="link-gmaps">Link Google Maps (URL)</Label>
+                <Input
+                  id="link-gmaps"
+                  type="url"
+                  placeholder="https://maps.app.goo.gl/... atau https://goo.gl/maps/..."
+                  value={form.link_gmaps}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, link_gmaps: e.target.value }))
+                  }
+                  disabled={isSaving}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Tautan Google Maps toko untuk memudahkan pembeli membuka petunjuk arah.
+                </p>
               </div>
 
               <div className="mt-4 flex items-center justify-end gap-2">

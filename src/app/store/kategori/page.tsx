@@ -185,19 +185,13 @@ export default function StoreCategoriesPage() {
           </span>
         </nav>
 
-        {/* Hero Banner Kategori */}
         <section aria-labelledby="categories-hero" className="mb-8">
           <div className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 via-emerald-500/5 to-background p-6 shadow-xs sm:p-8 md:p-10">
-            {/* Soft decorative background circles */}
             <div className="pointer-events-none absolute -top-20 -right-20 size-72 rounded-full bg-primary/10 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-20 size-72 rounded-full bg-emerald-500/10 blur-3xl" />
 
             <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
               <div className="max-w-2xl">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-                  <Sparkles className="size-3.5" />
-                  Koleksi Segar Alkadi
-                </span>
                 <h1
                   className="mt-3 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
                   id="categories-title"
@@ -209,7 +203,6 @@ export default function StoreCategoriesPage() {
                   dan kebutuhan dapur lengkap dengan standar mutu terjamin.
                 </p>
 
-                {/* Feature highlight badges */}
                 <div className="mt-6 flex flex-wrap items-center gap-3 text-xs sm:text-sm">
                   <span className="inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-card/80 px-3 py-1.5 font-medium text-foreground shadow-xs">
                     <Leaf className="size-4 text-emerald-600" />

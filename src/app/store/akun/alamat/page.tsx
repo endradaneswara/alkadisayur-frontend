@@ -3,8 +3,20 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Building2,
+  Check,
+  Edit2,
+  Home,
+  MapPin,
+  Pencil,
+  Phone,
+  Plus,
+  Trash2,
+  User,
+} from "lucide-react";
 
+import { StoreAccountNav } from "@/components/store-account-nav";
 import { StorePageShell } from "@/components/store-page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,6 +86,7 @@ export default function AddressesPage() {
       alamat_lengkap: address.alamat_lengkap,
     });
     setError(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function resetForm(): void {
@@ -142,99 +155,203 @@ export default function AddressesPage() {
 
   return (
     <StorePageShell>
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <header>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-            Akun saya
-          </p>
-          <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
-            Alamat tersimpan
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Simpan alamat agar checkout pesan antar lebih mudah.
-          </p>
-        </header>
+      <div className="w-full">
+        {/* Navigation Tabs Header */}
+        <StoreAccountNav
+          title="Daftar Alamat"
+          badge="Buku Alamat"
+          description="Simpan dan atur alamat tujuan pengiriman pesanan sayur segar untuk kemudahan belanja Anda."
+          action={
+            editingId !== null ? (
+              <Button onClick={resetForm} variant="outline" size="sm">
+                + Tambah Alamat Baru
+              </Button>
+            ) : null
+          }
+        />
 
         {error ? (
-          <p className="rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive" role="alert">
+          <div
+            className="mb-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+            role="alert"
+          >
             {error}
-          </p>
+          </div>
         ) : null}
 
-        <div className="grid items-start gap-6 lg:grid-cols-[1fr_360px]">
-          <section aria-label="Alamat yang tersimpan" className="flex flex-col gap-3">
+        {/* 2 Kolom Layout Lebar */}
+        <div className="grid items-start gap-8 lg:grid-cols-[1fr_420px]">
+          {/* Kolom Kiri: Daftar Kartu Alamat */}
+          <section aria-label="Alamat yang tersimpan" className="flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-1">
+              <h2 className="font-heading text-lg font-bold text-foreground">
+                Alamat Tersimpan ({addresses.length})
+              </h2>
+            </div>
+
             {isLoading ? (
-              Array.from({ length: 2 }, (_, index) => (
-                <Skeleton className="h-36 rounded-xl" key={index} />
-              ))
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Skeleton className="h-44 rounded-2xl" />
+                <Skeleton className="h-44 rounded-2xl" />
+              </div>
             ) : addresses.length ? (
-              addresses.map((address) => (
-                <Card key={address.id}>
-                  <CardContent className="flex items-start justify-between gap-4 p-5">
-                    <div className="flex min-w-0 gap-3">
-                      <MapPin aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
-                      <div className="min-w-0">
-                        <h2 className="font-semibold">{address.nama_alamat}</h2>
-                        <p className="mt-1 text-sm">{address.nama_penerima}</p>
-                        <p className="text-sm text-muted-foreground">{address.no_hp}</p>
-                        <p className="mt-2 text-sm leading-5 text-muted-foreground">
+              <div className="grid gap-4 sm:grid-cols-2">
+                {addresses.map((address) => (
+                  <Card
+                    key={address.id}
+                    className={`relative flex flex-col justify-between border transition-all duration-200 hover:border-primary/60 hover:shadow-md ${
+                      editingId === address.id
+                        ? "border-primary ring-2 ring-primary/20 bg-primary/5"
+                        : "border-border/80"
+                    }`}
+                  >
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                            <MapPin className="size-4" />
+                          </span>
+                          <h3 className="font-heading font-bold text-base text-foreground">
+                            {address.nama_alamat}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            aria-label={`Edit alamat ${address.nama_alamat}`}
+                            onClick={() => startEdit(address)}
+                            size="icon"
+                            variant="ghost"
+                            className="size-8"
+                          >
+                            <Pencil className="size-4" />
+                          </Button>
+                          <Button
+                            aria-label={`Hapus alamat ${address.nama_alamat}`}
+                            onClick={() => void handleDelete(address)}
+                            size="icon"
+                            variant="ghost"
+                            className="size-8 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 space-y-1.5 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 font-medium text-foreground">
+                          <User className="size-3.5 text-primary" />
+                          <span>{address.nama_penerima}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Phone className="size-3.5 text-primary" />
+                          <span>{address.no_hp}</span>
+                        </div>
+                        <p className="mt-2 text-xs leading-relaxed text-muted-foreground line-clamp-3 pt-1 border-t border-border">
                           {address.alamat_lengkap}
                         </p>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button aria-label={`Edit alamat ${address.nama_alamat}`} onClick={() => startEdit(address)} size="icon" variant="ghost">
-                        <Pencil aria-hidden="true" />
-                      </Button>
-                      <Button aria-label={`Hapus alamat ${address.nama_alamat}`} onClick={() => void handleDelete(address)} size="icon" variant="ghost">
-                        <Trash2 aria-hidden="true" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : (
-              <Card>
-                <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                  Belum ada alamat tersimpan. Tambahkan alamat di formulir.
+              <Card className="border border-border/80 bg-card/60">
+                <CardContent className="flex flex-col items-center justify-center py-14 text-center">
+                  <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <MapPin className="size-7" />
+                  </div>
+                  <h3 className="mt-4 font-heading text-lg font-bold">
+                    Belum Ada Alamat Tersimpan
+                  </h3>
+                  <p className="mt-1 max-w-sm text-xs text-muted-foreground sm:text-sm">
+                    Gunakan formulir di sebelah kanan untuk menambahkan alamat pengiriman pertama Anda.
+                  </p>
                 </CardContent>
               </Card>
             )}
           </section>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingId === null ? "Tambah alamat" : "Edit alamat"}</CardTitle>
+          {/* Kolom Kanan: Formulir Tambah/Edit Alamat */}
+          <Card className="border border-border/80 shadow-xs lg:sticky lg:top-24">
+            <CardHeader className="border-b border-border bg-muted/20 pb-4">
+              <CardTitle className="flex items-center gap-2 text-base">
+                {editingId === null ? (
+                  <>
+                    <Plus className="size-4 text-primary" />
+                    Tambah Alamat Baru
+                  </>
+                ) : (
+                  <>
+                    <Edit2 className="size-4 text-primary" />
+                    Edit Alamat
+                  </>
+                )}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <form onSubmit={handleSubmit}>
-                <FieldGroup>
+                <FieldGroup className="space-y-4">
                   <Field>
-                    <FieldLabel htmlFor="address-label">Nama alamat</FieldLabel>
-                    <Input id="address-label" maxLength={100} onChange={(event) => updateField("nama_alamat", event.target.value)} required value={formData.nama_alamat} placeholder="Rumah, kantor, ..." />
+                    <FieldLabel htmlFor="address-label">Nama / Label Alamat</FieldLabel>
+                    <Input
+                      id="address-label"
+                      maxLength={100}
+                      onChange={(event) => updateField("nama_alamat", event.target.value)}
+                      required
+                      value={formData.nama_alamat}
+                      placeholder="Contoh: Rumah, Kantor, Kos, dll"
+                      className="mt-1 text-sm"
+                    />
                   </Field>
+
                   <Field>
-                    <FieldLabel htmlFor="address-recipient">Nama penerima</FieldLabel>
-                    <Input id="address-recipient" maxLength={100} onChange={(event) => updateField("nama_penerima", event.target.value)} required value={formData.nama_penerima} />
+                    <FieldLabel htmlFor="address-recipient">Nama Penerima</FieldLabel>
+                    <Input
+                      id="address-recipient"
+                      maxLength={100}
+                      onChange={(event) => updateField("nama_penerima", event.target.value)}
+                      required
+                      value={formData.nama_penerima}
+                      placeholder="Nama lengkap penerima pesanan"
+                      className="mt-1 text-sm"
+                    />
                   </Field>
+
                   <Field>
-                    <FieldLabel htmlFor="address-phone">Nomor HP</FieldLabel>
-                    <Input id="address-phone" autoComplete="tel" maxLength={20} onChange={(event) => updateField("no_hp", event.target.value)} required type="tel" value={formData.no_hp} />
+                    <FieldLabel htmlFor="address-phone">Nomor Telepon / WhatsApp</FieldLabel>
+                    <Input
+                      id="address-phone"
+                      autoComplete="tel"
+                      maxLength={20}
+                      onChange={(event) => updateField("no_hp", event.target.value)}
+                      required
+                      type="tel"
+                      value={formData.no_hp}
+                      placeholder="0812xxxxxxxx"
+                      className="mt-1 text-sm font-mono"
+                    />
                   </Field>
+
                   <Field>
-                    <FieldLabel htmlFor="address-full">Alamat lengkap</FieldLabel>
+                    <FieldLabel htmlFor="address-full">Alamat Lengkap</FieldLabel>
                     <textarea
-                      className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      className="mt-1 min-h-[100px] w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring"
                       id="address-full"
                       onChange={(event) => updateField("alamat_lengkap", event.target.value)}
                       required
                       value={formData.alamat_lengkap}
+                      placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, patokan lokasi..."
                     />
                   </Field>
-                  <div className="flex flex-wrap gap-2">
-                    <Button disabled={isSaving} type="submit">
-                      {isSaving ? "Menyimpan..." : editingId === null ? "Simpan alamat" : "Simpan perubahan"}
-                      {editingId === null ? <Plus aria-hidden="true" data-icon="inline-start" /> : null}
+
+                  <div className="flex flex-wrap items-center gap-2 pt-2">
+                    <Button disabled={isSaving} type="submit" className="flex-1">
+                      {isSaving
+                        ? "Menyimpan..."
+                        : editingId === null
+                        ? "Simpan Alamat"
+                        : "Simpan Perubahan"}
                     </Button>
                     {editingId !== null ? (
                       <Button onClick={resetForm} type="button" variant="outline">
@@ -247,10 +364,6 @@ export default function AddressesPage() {
             </CardContent>
           </Card>
         </div>
-
-        <Link className="text-sm text-primary hover:underline" href="/store/akun/profile">
-          Kembali ke profil
-        </Link>
       </div>
     </StorePageShell>
   );

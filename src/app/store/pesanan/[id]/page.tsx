@@ -3,7 +3,20 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, MapPin, PackageCheck, Store } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  CreditCard,
+  FileText,
+  MapPin,
+  Package,
+  PackageCheck,
+  ShoppingBag,
+  Store,
+  Truck,
+} from "lucide-react";
 
 import { StorePageShell } from "@/components/store-page-shell";
 import { Badge } from "@/components/ui/badge";
@@ -26,9 +39,9 @@ import { cancelPesanan, getPesanan } from "@/services/pesananService";
 import type { MetodePembayaran, Pesanan, StatusPesanan } from "@/types";
 
 const statusLabels: Record<StatusPesanan, string> = {
-  pending: "Menunggu konfirmasi",
-  diproses: "Sedang diproses",
-  dikirim: "Dalam pengiriman",
+  pending: "Menunggu Konfirmasi",
+  diproses: "Sedang Diproses",
+  dikirim: "Dalam Pengiriman",
   selesai: "Selesai",
   dibatalkan: "Dibatalkan",
 };
@@ -100,7 +113,7 @@ export default function OrderDetailPage() {
       setOrder(response.data);
       toast.add({
         title: "Pesanan dibatalkan",
-        description: "Status pesanan Anda telah diperbarui.",
+        description: "Status pesanan berhasil diperbarui menjadi dibatalkan.",
         type: "success",
       });
     } catch (cancelError: unknown) {
@@ -124,17 +137,15 @@ export default function OrderDetailPage() {
         pesanan_id: order.id,
         metode_pembayaran: paymentMethod,
       });
-      setOrder((current) =>
-        current ? { ...current, pembayaran: response.data } : current,
-      );
+      setOrder({ ...order, pembayaran: response.data });
       toast.add({
-        title: "Metode pembayaran tersimpan",
-        description: "Status pembayaran menunggu konfirmasi pihak toko.",
+        title: "Pembayaran disimpan",
+        description: `Metode ${paymentMethod} berhasil disimpan.`,
         type: "success",
       });
     } catch (paymentError: unknown) {
       toast.add({
-        title: "Pembayaran tidak dapat dicatat",
+        title: "Pembayaran gagal disimpan",
         description: getErrorMessage(paymentError),
         type: "error",
       });
@@ -147,211 +158,335 @@ export default function OrderDetailPage() {
 
   return (
     <StorePageShell>
-      <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <Button
-          className="w-fit"
-          nativeButton={false}
-          render={<Link href="/store/pesanan" />}
-          variant="ghost"
-        >
-          <ArrowLeft aria-hidden="true" data-icon="inline-start" />
-          Kembali ke pesanan
-        </Button>
+      <div className="w-full">
+        {/* Breadcrumb & Back */}
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <nav aria-label="Breadcrumb" className="text-sm text-muted-foreground">
+            <Link className="hover:text-primary transition-colors" href="/store">
+              Beranda
+            </Link>
+            <span aria-hidden="true" className="px-2">
+              /
+            </span>
+            <Link className="hover:text-primary transition-colors" href="/store/pesanan">
+              Pesanan Saya
+            </Link>
+            <span aria-hidden="true" className="px-2">
+              /
+            </span>
+            <span aria-current="page" className="font-medium text-foreground">
+              {order ? `#${order.nomor_order}` : "Detail Pesanan"}
+            </span>
+          </nav>
 
+          <Button
+            nativeButton={false}
+            render={<Link href="/store/pesanan" />}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <ArrowLeft className="size-4" />
+            Kembali ke Daftar Pesanan
+          </Button>
+        </div>
+
+        {/* Error state */}
         {!isValidId || error ? (
-          <p className="rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive" role="alert">
-            Pesanan tidak dapat dimuat: {isValidId ? error : "Nomor pesanan tidak valid."}
-          </p>
+          <div
+            className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive"
+            role="alert"
+          >
+            <p className="font-semibold">
+              Pesanan tidak dapat dimuat: {isValidId ? error : "Nomor pesanan tidak valid."}
+            </p>
+          </div>
         ) : null}
 
-        {isLoading && isValidId ? <Skeleton className="h-96 rounded-xl" /> : null}
+        {/* Loading state */}
+        {isLoading && isValidId ? (
+          <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+            <Skeleton className="h-96 rounded-2xl" />
+            <Skeleton className="h-80 rounded-2xl" />
+          </div>
+        ) : null}
 
+        {/* Main Content */}
         {!isLoading && order ? (
-          <>
-            <header className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                  Detail pesanan
-                </p>
-                <h1 className="mt-2 font-heading text-3xl font-semibold tracking-tight">
-                  {order.nomor_order}
-                </h1>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {new Date(order.tanggal_pemesanan).toLocaleString("id-ID", {
-                    dateStyle: "full",
-                    timeStyle: "short",
-                  })}
-                </p>
+          <div className="flex flex-col gap-8">
+            {/* Order Header Banner */}
+            <div className="rounded-3xl border border-border/80 bg-card p-6 shadow-xs sm:p-8">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                    Detail Pesanan
+                  </span>
+                  <div className="mt-1 flex flex-wrap items-center gap-3">
+                    <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+                      #{order.nomor_order}
+                    </h1>
+                    <Badge
+                      variant={statusVariants[order.status]}
+                      className="text-xs font-semibold px-3 py-1"
+                    >
+                      {statusLabels[order.status]}
+                    </Badge>
+                  </div>
+                  <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground sm:text-sm">
+                    <Calendar className="size-4 text-primary" />
+                    Dipesan pada{" "}
+                    {new Date(order.tanggal_pemesanan).toLocaleString("id-ID", {
+                      dateStyle: "full",
+                      timeStyle: "short",
+                    })}
+                  </p>
+                </div>
+
+                {canCancel ? (
+                  <Button
+                    disabled={isCancelling}
+                    onClick={() => void handleCancel()}
+                    variant="destructive"
+                    size="sm"
+                  >
+                    {isCancelling ? "Membatalkan..." : "Batalkan Pesanan"}
+                  </Button>
+                ) : null}
               </div>
-              <Badge variant={statusVariants[order.status]}>{statusLabels[order.status]}</Badge>
-            </header>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Produk pesanan</CardTitle>
-              </CardHeader>
-              <CardContent className="flex flex-col divide-y">
-                {order.items?.map((item) => (
-                  <div className="flex justify-between gap-4 py-3 first:pt-0 last:pb-0" key={item.id}>
-                    <div>
-                      <p className="font-medium">{item.nama_barang}</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {item.jumlah} × {formatRupiah(item.harga)}
-                      </p>
-                    </div>
-                    <p className="font-medium">{formatRupiah(item.subtotal)}</p>
-                  </div>
-                ))}
-                <div className="flex justify-between pt-4 text-sm">
-                  <span>Subtotal produk</span>
-                  <span>{formatRupiah(Number(order.total_harga) - Number(order.biaya_pengiriman))}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span>Biaya pengiriman</span>
-                  <span>{formatRupiah(order.biaya_pengiriman)}</span>
-                </div>
-                <div className="flex justify-between border-t pt-4 font-semibold">
-                  <span>Total pesanan</span>
-                  <span>{formatRupiah(order.total_harga)}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>
-                    {order.metode === "pesan_antar"
-                      ? "Alamat pengiriman"
-                      : "Lokasi pengambilan"}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex gap-3 text-sm">
-                  {order.metode === "pesan_antar" ? (
-                    <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
-                  ) : (
-                    <Store aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
-                  )}
-                  <div>
-                    <p className="font-medium">
-                      {order.metode === "pesan_antar"
-                        ? order.alamat?.nama_alamat ?? "Alamat tidak tersedia"
-                        : order.lokasi_toko?.nama ?? "Lokasi tidak tersedia"}
-                    </p>
-                    {order.metode === "pesan_antar" && order.alamat ? (
-                      <>
-                        <p className="mt-1">{order.alamat.nama_penerima}</p>
-                        <p className="text-muted-foreground">{order.alamat.no_hp}</p>
-                        <p className="mt-1 text-muted-foreground">{order.alamat.alamat_lengkap}</p>
-                      </>
-                    ) : null}
-                    {order.metode === "ambil_ditoko" && order.lokasi_toko?.deskripsi ? (
-                      <p className="mt-1 text-muted-foreground">{order.lokasi_toko.deskripsi}</p>
-                    ) : null}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pembayaran</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-2 text-sm">
-                  {order.pembayaran ? (
-                    <>
-                      <p>
-                        Metode: <span className="font-medium">{order.pembayaran.metode_pembayaran}</span>
-                      </p>
-                      <p>
-                        Status: <span className="font-medium capitalize">{order.pembayaran.status}</span>
-                      </p>
-                      <p>
-                        Nomor transaksi: <span className="font-medium">{order.pembayaran.transaksi_id}</span>
-                      </p>
-                      <p className="text-xs leading-5 text-muted-foreground">
-                        Status pembayaran diperbarui oleh pihak toko. Integrasi pembayaran otomatis belum tersedia.
-                      </p>
-                    </>
-                  ) : (
-                    <div className="flex flex-col gap-3">
-                      <p className="text-muted-foreground">
-                        Metode pembayaran pesanan ini belum dicatat.
-                      </p>
-                      {order.status !== "dibatalkan" ? (
-                        <>
-                          <Select
-                            items={[
-                              { label: "Bayar di tempat (COD)", value: "COD" },
-                              { label: "Transfer", value: "Transfer" },
-                              { label: "QRIS", value: "QRIS" },
-                            ]}
-                            onValueChange={(value) => {
-                              if (value === "COD" || value === "Transfer" || value === "QRIS") {
-                                setPaymentMethod(value);
-                              }
-                            }}
-                            value={paymentMethod}
-                          >
-                            <SelectTrigger aria-label="Pilih metode pembayaran">
-                              <SelectValue placeholder="Pilih metode pembayaran" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectItem value="COD">Bayar di tempat (COD)</SelectItem>
-                                <SelectItem value="Transfer">Transfer</SelectItem>
-                                <SelectItem value="QRIS">QRIS</SelectItem>
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            disabled={isCreatingPayment}
-                            onClick={() => void handleCreatePayment()}
-                            type="button"
-                          >
-                            {isCreatingPayment ? "Menyimpan..." : "Simpan metode pembayaran"}
-                          </Button>
-                        </>
-                      ) : null}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
             </div>
 
-            {order.catatan ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Catatan</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">{order.catatan}</CardContent>
-              </Card>
-            ) : null}
+            {/* 2 Kolom Layout Lebar */}
+            <div className="grid items-start gap-8 lg:grid-cols-[1fr_400px]">
+              {/* Kolom Kiri: Rincian Produk & Catatan */}
+              <div className="flex flex-col gap-6">
+                <Card className="border border-border/80">
+                  <CardHeader className="border-b border-border bg-muted/20 pb-4">
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <ShoppingBag className="size-5 text-primary" />
+                      Produk yang Dipesan
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="divide-y divide-border p-0">
+                    {order.items?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between gap-4 p-5 transition-colors hover:bg-muted/10"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold">
+                            {item.jumlah}x
+                          </div>
+                          <div>
+                            <p className="font-semibold text-foreground text-sm sm:text-base">
+                              {item.nama_barang}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Harga Satuan: {formatRupiah(item.harga)}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="font-heading font-bold text-foreground text-sm sm:text-base">
+                          {formatRupiah(item.subtotal)}
+                        </p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
 
-            {canCancel ? (
-              <div>
-                <Button disabled={isCancelling} onClick={() => void handleCancel()} variant="destructive">
-                  {isCancelling ? "Membatalkan..." : "Batalkan pesanan"}
-                </Button>
-              </div>
-            ) : null}
+                {/* Catatan Tambahan */}
+                {order.catatan ? (
+                  <Card className="border border-border/80">
+                    <CardHeader className="border-b border-border bg-muted/20 pb-3">
+                      <CardTitle className="flex items-center gap-2 text-base">
+                        <FileText className="size-4 text-primary" />
+                        Catatan Pesanan
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-5 text-sm text-muted-foreground">
+                      {order.catatan}
+                    </CardContent>
+                  </Card>
+                ) : null}
 
-            {order.status === "selesai" ? (
-              <Card>
-                <CardContent className="flex flex-wrap items-center justify-between gap-4 p-5">
-                  <div>
-                    <h2 className="font-semibold">Bagaimana pengalaman Anda?</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Bagikan ulasan Anda untuk membantu pelanggan lain.
-                    </p>
+                {/* Ajakan Beri Ulasan jika Selesai */}
+                {order.status === "selesai" ? (
+                  <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-6">
+                    <div>
+                      <h3 className="font-heading text-lg font-bold">
+                        Bagaimana Pengalaman Belanja Anda?
+                      </h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Bantu kami menjaga kualitas sayur segar dengan memberikan ulasan toko.
+                      </p>
+                    </div>
+                    <Button
+                      nativeButton={false}
+                      render={<Link href="/store/akun/ulasan" />}
+                      className="gap-2"
+                    >
+                      <PackageCheck className="size-4" />
+                      Tulis Ulasan Toko
+                    </Button>
                   </div>
-                  <Button nativeButton={false} render={<Link href="/store/akun/ulasan" />} variant="outline">
-                    <PackageCheck aria-hidden="true" data-icon="inline-start" />
-                    Beri ulasan
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : null}
-          </>
+                ) : null}
+              </div>
+
+              {/* Kolom Kanan: Ringkasan Biaya, Pengiriman & Pembayaran */}
+              <div className="flex flex-col gap-6">
+                {/* Ringkasan Pembayaran */}
+                <Card className="border border-border/80 shadow-xs">
+                  <CardHeader className="border-b border-border bg-muted/20 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <CreditCard className="size-4 text-primary" />
+                      Ringkasan Pembayaran
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 p-5 text-sm">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Subtotal Produk</span>
+                      <span className="font-medium text-foreground">
+                        {formatRupiah(
+                          Number(order.total_harga) - Number(order.biaya_pengiriman),
+                        )}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Biaya Pengiriman</span>
+                      <span className="font-medium text-foreground">
+                        {Number(order.biaya_pengiriman) > 0
+                          ? formatRupiah(order.biaya_pengiriman)
+                          : "Gratis"}
+                      </span>
+                    </div>
+                    <div className="border-t border-border pt-3 flex justify-between font-heading font-bold text-base sm:text-lg text-primary">
+                      <span>Total Tagihan</span>
+                      <span>{formatRupiah(order.total_harga)}</span>
+                    </div>
+
+                    <div className="mt-4 border-t border-border pt-4">
+                      {order.pembayaran ? (
+                        <div className="space-y-1.5 rounded-xl border border-border bg-muted/30 p-3.5 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Metode:</span>
+                            <span className="font-bold">{order.pembayaran.metode_pembayaran}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Status:</span>
+                            <span className="font-bold capitalize text-emerald-600">
+                              {order.pembayaran.status}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">No. Transaksi:</span>
+                            <span className="font-mono text-muted-foreground">
+                              {order.pembayaran.transaksi_id}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <p className="text-xs text-muted-foreground">
+                            Pilih dan simpan metode pembayaran untuk pesanan ini:
+                          </p>
+                          {order.status !== "dibatalkan" ? (
+                            <>
+                              <Select
+                                items={[
+                                  { label: "Bayar di Tempat (COD)", value: "COD" },
+                                  { label: "Transfer Bank", value: "Transfer" },
+                                  { label: "QRIS", value: "QRIS" },
+                                ]}
+                                onValueChange={(value) => {
+                                  if (value === "COD" || value === "Transfer" || value === "QRIS") {
+                                    setPaymentMethod(value);
+                                  }
+                                }}
+                                value={paymentMethod}
+                              >
+                                <SelectTrigger aria-label="Pilih metode pembayaran">
+                                  <SelectValue placeholder="Pilih metode pembayaran" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectGroup>
+                                    <SelectItem value="COD">Bayar di Tempat (COD)</SelectItem>
+                                    <SelectItem value="Transfer">Transfer Bank</SelectItem>
+                                    <SelectItem value="QRIS">QRIS</SelectItem>
+                                  </SelectGroup>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                className="w-full"
+                                disabled={isCreatingPayment}
+                                onClick={() => void handleCreatePayment()}
+                                type="button"
+                              >
+                                {isCreatingPayment
+                                  ? "Menyimpan..."
+                                  : "Konfirmasi Pembayaran"}
+                              </Button>
+                            </>
+                          ) : null}
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Info Pengiriman / Pengambilan Toko */}
+                <Card className="border border-border/80 shadow-xs">
+                  <CardHeader className="border-b border-border bg-muted/20 pb-3">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      {order.metode === "pesan_antar" ? (
+                        <>
+                          <Truck className="size-4 text-primary" />
+                          Alamat Pengiriman
+                        </>
+                      ) : (
+                        <>
+                          <Store className="size-4 text-primary" />
+                          Lokasi Pengambilan Toko
+                        </>
+                      )}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-5 text-sm">
+                    {order.metode === "pesan_antar" ? (
+                      order.alamat ? (
+                        <div className="space-y-1">
+                          <p className="font-bold text-foreground">
+                            {order.alamat.nama_alamat}
+                          </p>
+                          <p className="text-xs font-semibold text-foreground">
+                            {order.alamat.nama_penerima} ({order.alamat.no_hp})
+                          </p>
+                          <p className="text-xs leading-relaxed text-muted-foreground pt-1">
+                            {order.alamat.alamat_lengkap}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Alamat tidak tersedia.
+                        </p>
+                      )
+                    ) : order.lokasi_toko ? (
+                      <div className="space-y-1">
+                        <p className="font-bold text-foreground">
+                          {order.lokasi_toko.nama}
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {order.lokasi_toko.deskripsi || "Silakan ambil pesanan di gerai cabang toko Alkadi."}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Lokasi toko tidak tersedia.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </StorePageShell>

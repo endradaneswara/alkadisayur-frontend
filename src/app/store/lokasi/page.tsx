@@ -1,160 +1,442 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Store } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  ExternalLink,
+  MapPin,
+  Navigation,
+  Phone,
+  Store,
+} from "lucide-react";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
 import { Button } from "@/components/ui/button";
-import { Map, MapControls } from "@/components/ui/map";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Map,
+  MapControls,
+  MapMarker,
+  MarkerContent,
+  MarkerPopup,
+} from "@/components/ui/map";
+import { listLokasi } from "@/services/lokasiService";
+import type { Lokasi } from "@/types";
 
-const storeSlides = [
+interface BranchSlide {
+  src: string;
+  name: string;
+  tagline: string;
+  address: string;
+  hours: string;
+  phone: string;
+  lat: number;
+  lng: number;
+}
+
+const branchSlides: BranchSlide[] = [
   {
-    src: "/images/lokasi-toko-1.jpg",
-    alt: "Tampak depan toko Alkadi pertama",
-    label: "Toko Alkadi 1",
+    src: "/toko1.webp",
+    name: "Toko Alkadi Sokka",
+    tagline: "Pusat sayur segar dan kebutuhan dapur lengkap",
+    address: "Sokka, Kebumen, Jawa Tengah",
+    hours: "Setiap Hari, 06.00 – 23.00 WIB",
+    phone: "0812-1577-0290",
+    lat: -7.67906,
+    lng: 109.641435,
   },
   {
-    src: "/images/lokasi-toko-2.jpg",
-    alt: "Tampak depan toko Alkadi kedua",
-    label: "Toko Alkadi 2",
+    src: "/toko2.webp",
+    name: "Toko Alkadi Pemuda",
+    tagline: "Belanja nyaman dengan fasilitas display segar berpendingin",
+    address: "Jl. Pemuda, Gombong, Kebumen, Jawa Tengah",
+    hours: "Setiap Hari, 06.00 – 22.00 WIB",
+    phone: "0812-1577-0290",
+    lat: -7.607,
+    lng: 109.514,
   },
 ];
 
 export default function LokasiPage() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [failedImageSources, setFailedImageSources] = useState<Set<string>>(
-    () => new Set(),
-  );
+  const [apiLocations, setApiLocations] = useState<Lokasi[]>([]);
+  const [isLoadingApi, setIsLoadingApi] = useState(true);
 
   useEffect(() => {
-    const slideTimer = window.setInterval(() => {
-      setActiveSlide((currentSlide) => (currentSlide + 1) % storeSlides.length);
-    }, 6000);
+    let isCurrent = true;
+    void listLokasi({ page: 1 })
+      .then((res) => {
+        if (isCurrent && res.data) {
+          setApiLocations(res.data);
+        }
+      })
+      .catch(() => {
+        // Fallback
+      })
+      .finally(() => {
+        if (isCurrent) {
+          setIsLoadingApi(false);
+        }
+      });
 
-    return () => window.clearInterval(slideTimer);
+    return () => {
+      isCurrent = false;
+    };
   }, []);
 
-  function showSlide(slideIndex: number): void {
-    setActiveSlide((slideIndex + storeSlides.length) % storeSlides.length);
-  }
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveSlide((curr) => (curr + 1) % branchSlides.length);
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  const currentSlide = storeSlides[activeSlide];
-  const imageIsUnavailable = failedImageSources.has(currentSlide.src);
+  const currentSlide = branchSlides[activeSlide];
+
+  // Koordinat lokasi dari API yang valid
+  const validLocations = apiLocations.filter(
+    (loc) => !isNaN(Number(loc.latitude)) && !isNaN(Number(loc.longitude)),
+  );
+
+  // Jika tidak ada dari API, fallback ke branch slides
+  const mapCenter: [number, number] =
+    validLocations.length > 0
+      ? [Number(validLocations[0].longitude), Number(validLocations[0].latitude)]
+      : [109.641435, -7.67906];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="store-landing min-h-screen bg-background text-foreground">
       <StoreNavbar />
+
       <main>
+        {/* HERO SECTION — Matching Landing Page Hero Style */}
         <section
-          aria-label="Foto lokasi toko Alkadi"
-          aria-roledescription="carousel"
-          className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8"
+          aria-labelledby="lokasi-hero-title"
+          className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
         >
-          <div className="relative isolate flex min-h-[420px] overflow-hidden rounded-2xl border border-border bg-secondary sm:min-h-[520px] lg:min-h-[600px]">
-            {imageIsUnavailable ? (
-              <div
-                aria-label={`Foto ${currentSlide.label} belum ditambahkan`}
-                className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-secondary px-6 text-center text-primary"
-                role="img"
-              >
-                <Store aria-hidden="true" className="size-14" />
-              </div>
-            ) : (
-              <Image
-                key={currentSlide.src}
-                alt={currentSlide.alt}
-                className="object-cover"
-                fill
-                priority={activeSlide === 0}
-                sizes="(max-width: 1280px) 100vw, 1280px"
-                src={currentSlide.src}
-                onError={() => {
-                  setFailedImageSources((sources) => {
-                    const nextSources = new Set(sources);
-                    nextSources.add(currentSlide.src);
-                    return nextSources;
-                  });
-                }}
-              />
-            )}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent"
+          <div className="store-hero-background" aria-hidden="true">
+            <Image
+              alt={currentSlide.name}
+              className="object-cover transition-all duration-700"
+              fill
+              priority
+              sizes="100vw"
+              src={currentSlide.src}
             />
-            <div className="relative z-10 mt-auto flex w-full flex-wrap items-end justify-between gap-6 p-5 text-white sm:p-8 lg:p-10">
-              <div aria-live="polite">
-                <p className="text-sm font-medium text-white/85">
-                  Lokasi toko Alkadi
-                </p>
-                <h1
-                  className="mt-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl"
-                  id="hero-title"
-                >
-                  {currentSlide.label}
-                </h1>
+          </div>
+
+          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-24 xl:px-12">
+            <div className="store-enter flex flex-col items-start">
+              <h1
+                className="mt-4 max-w-2xl font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl"
+                id="lokasi-hero-title"
+              >
+                Kunjungi Cabang
+                <br />
+                <span className="text-foreground">Toko Alkadi Terdekat</span>
+              </h1>
+
+              <p className="mt-6 max-w-xl text-base leading-7 text-foreground sm:text-lg sm:leading-8">
+                Temukan pengalaman belanja sayur dan kebutuhan dapur segar
+                secara langsung di toko kami yang bersih, nyaman, dan ramah
+                keluarga.
+              </p>
+
+              {/* Quick Branch Info Badge */}
+              <div className="mt-6 flex flex-wrap items-center gap-4 rounded-xl border border-border/80 bg-background/80 p-4 backdrop-blur-md">
+                <div className="flex items-center gap-2.5 text-sm font-medium">
+                  <MapPin aria-hidden="true" className="size-4 text-primary" />
+                  <span>{currentSlide.name}</span>
+                </div>
+                <div className="hidden h-4 w-px bg-border sm:block" />
+                <div className="flex items-center gap-2.5 text-xs text-muted-foreground sm:text-sm">
+                  <Clock aria-hidden="true" className="size-4 text-primary" />
+                  <span>{currentSlide.hours}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Button
-                  aria-label="Foto sebelumnya"
-                  onClick={() => showSlide(activeSlide - 1)}
-                  size="icon"
+                  className="h-11 px-5"
+                  nativeButton={false}
+                  render={<a href="#peta-lokasi" />}
+                  size="lg"
+                >
+                  <MapPin aria-hidden="true" data-icon="inline-start" />
+                  Lihat Peta Lokasi
+                </Button>
+                <Button
+                  className="h-11 px-5"
+                  nativeButton={false}
+                  render={
+                    <a
+                      href={
+                        currentSlide.lat && currentSlide.lng
+                          ? `https://www.google.com/maps/search/?api=1&query=${currentSlide.lat},${currentSlide.lng}`
+                          : "#peta-lokasi"
+                      }
+                      rel="noreferrer"
+                      target="_blank"
+                    />
+                  }
+                  size="lg"
                   variant="outline"
                 >
-                  <ChevronLeft aria-hidden="true" />
+                  <Navigation aria-hidden="true" data-icon="inline-start" />
+                  Petunjuk Arah
+                  <ExternalLink aria-hidden="true" data-icon="inline-end" />
                 </Button>
-                <span
-                  aria-label={`Foto ${activeSlide + 1} dari ${storeSlides.length}`}
-                  className="min-w-14 text-center text-sm font-medium"
-                  role="status"
-                >
-                  {activeSlide + 1} / {storeSlides.length}
-                </span>
-                <Button
-                  aria-label="Foto berikutnya"
-                  onClick={() => showSlide(activeSlide + 1)}
-                  size="icon"
-                  variant="outline"
-                >
-                  <ChevronRight aria-hidden="true" />
-                </Button>
+              </div>
+            </div>
+
+            {/* Slider Switcher Card */}
+            <div className="store-enter store-enter-delay-1 flex flex-col gap-4">
+              <div className="relative aspect-4/3 w-full overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+                <Image
+                  alt={currentSlide.name}
+                  className="object-cover"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 600px"
+                  src={currentSlide.src}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-emerald-300">
+                    Foto Cabang
+                  </span>
+                  <h3 className="mt-1 font-heading text-xl font-bold sm:text-2xl">
+                    {currentSlide.name}
+                  </h3>
+                  <p className="mt-1 text-xs text-white/80 sm:text-sm">
+                    {currentSlide.tagline}
+                  </p>
+                </div>
+              </div>
+
+              {/* Thumbnails / Slider control */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Button
+                    aria-label="Cabang sebelumnya"
+                    onClick={() =>
+                      setActiveSlide(
+                        (curr) =>
+                          (curr - 1 + branchSlides.length) % branchSlides.length,
+                      )
+                    }
+                    size="icon"
+                    variant="outline"
+                  >
+                    <ChevronLeft aria-hidden="true" className="size-4" />
+                  </Button>
+                  <Button
+                    aria-label="Cabang berikutnya"
+                    onClick={() =>
+                      setActiveSlide(
+                        (curr) => (curr + 1) % branchSlides.length,
+                      )
+                    }
+                    size="icon"
+                    variant="outline"
+                  >
+                    <ChevronRight aria-hidden="true" className="size-4" />
+                  </Button>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {activeSlide + 1} dari {branchSlides.length} cabang
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                  {branchSlides.map((slide, idx) => (
+                    <button
+                      key={slide.name}
+                      aria-label={`Pilih ${slide.name}`}
+                      className={`h-2.5 rounded-full transition-all ${
+                        idx === activeSlide
+                          ? "w-8 bg-primary"
+                          : "w-2.5 bg-border hover:bg-primary/50"
+                      }`}
+                      onClick={() => setActiveSlide(idx)}
+                      type="button"
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </section>
 
+        <section className="border-y border-border bg-card py-16 sm:py-20">
+          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
+            <div className="mx-auto max-w-2xl text-center">
+              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                Kenyamanan Berbelanja
+              </span>
+              <h2 className="mt-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+                Mengapa Belanja Langsung di Alkadi?
+              </h2>
+              <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+                Kami merancang toko fisik agar setiap keluarga dapat memilih bahan
+                makanan berkualitas dengan higienis, leluasa, dan puas.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION PETA INTERAKTIF DENGAN MARKER */}
         <section
+          id="peta-lokasi"
           aria-labelledby="store-map-title"
-          className="bg-card py-12 sm:py-16 lg:py-20"
+          className="mx-auto max-w-[1536px] px-4 py-16 sm:px-6 sm:py-20 lg:px-10 lg:py-24 xl:px-12"
         >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="mb-6 max-w-2xl sm:mb-8">
-              <p className="text-sm font-semibold tracking-wide text-primary">
-                Kunjungi kami
+          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+                Peta Interaktif
               </p>
               <h2
-                className="mt-2 font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
+                className="mt-1 font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
                 id="store-map-title"
               >
-                Temukan lokasi toko
+                Temukan Lokasi Toko di Peta
               </h2>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
+                Klik pin marker pada peta untuk melihat detail cabang dan membuka petunjuk arah Google Maps.
+              </p>
             </div>
-            <div
-              aria-label="Peta lokasi toko Alkadi"
-              className="h-[360px] overflow-hidden rounded-2xl border border-border sm:h-[460px]"
-              role="region"
+
+            <Button
+              nativeButton={false}
+              render={<Link href="/store/kontak" />}
+              variant="outline"
             >
-              <Map
-                className="h-full w-full"
-                center={[117, -2]}
-                zoom={4}
-              >
-                <MapControls showCompass position="bottom-right" />
-              </Map>
-            </div>
+              Hubungi Layanan Toko
+            </Button>
+          </div>
+
+          {/* Map Container */}
+          <div
+            aria-label="Peta lokasi toko Alkadi"
+            className="h-[460px] overflow-hidden rounded-2xl border border-border sm:h-[560px] shadow-lg"
+            role="region"
+          >
+            <Map className="h-full w-full" center={mapCenter} zoom={11}>
+              <MapControls position="bottom-right" showCompass />
+
+              {/* Render Markers dari Data Database API */}
+              {validLocations.length > 0
+                ? validLocations.map((loc) => {
+                    const lat = Number(loc.latitude);
+                    const lng = Number(loc.longitude);
+                    const gmapsUrl =
+                      loc.link_gmaps ||
+                      `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${lat},${lng}`,
+                      )}`;
+
+                    return (
+                      <MapMarker key={loc.id} latitude={lat} longitude={lng}>
+                        <MarkerContent>
+                          <div className="group relative flex flex-col items-center">
+                            {/* Label Cabang */}
+                            <span className="mb-1.5 rounded-md bg-background/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-md ring-1 ring-border whitespace-nowrap">
+                              {loc.nama}
+                            </span>
+                            {/* Pin Icon */}
+                            <div className="relative flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/30 transition-transform group-hover:scale-110">
+                              <Store className="size-5" />
+                            </div>
+                            {/* Arrow Tip */}
+                            <div className="-mt-1 size-2 rotate-45 bg-primary" />
+                          </div>
+                        </MarkerContent>
+
+                        <MarkerPopup closeButton>
+                          <div className="flex flex-col gap-2 p-1 text-xs max-w-[240px]">
+                            <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+                              <Store className="size-4 text-primary" />
+                              {loc.nama}
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">
+                              {loc.deskripsi || "Cabang resmi toko Alkadi."}
+                            </p>
+                            <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
+                              <a
+                                href={gmapsUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline text-xs"
+                              >
+                                <Navigation className="size-3.5" />
+                                Buka di Google Maps
+                                <ExternalLink className="size-3" />
+                              </a>
+                            </div>
+                          </div>
+                        </MarkerPopup>
+                      </MapMarker>
+                    );
+                  })
+                : /* Fallback Markers dari branchSlides jika API belum siap */
+                  branchSlides.map((branch) => {
+                    const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                      `${branch.lat},${branch.lng}`,
+                    )}`;
+
+                    return (
+                      <MapMarker
+                        key={branch.name}
+                        latitude={branch.lat}
+                        longitude={branch.lng}
+                      >
+                        <MarkerContent>
+                          <div className="group relative flex flex-col items-center">
+                            <span className="mb-1.5 rounded-md bg-background/95 px-2.5 py-1 text-[11px] font-bold text-foreground shadow-md ring-1 ring-border whitespace-nowrap">
+                              {branch.name}
+                            </span>
+                            <div className="relative flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl ring-4 ring-primary/30 transition-transform group-hover:scale-110">
+                              <Store className="size-5" />
+                            </div>
+                            <div className="-mt-1 size-2 rotate-45 bg-primary" />
+                          </div>
+                        </MarkerContent>
+
+                        <MarkerPopup closeButton>
+                          <div className="flex flex-col gap-2 p-1 text-xs max-w-[240px]">
+                            <div className="flex items-center gap-1.5 font-bold text-sm text-foreground">
+                              <Store className="size-4 text-primary" />
+                              {branch.name}
+                            </div>
+                            <p className="text-muted-foreground leading-relaxed">
+                              {branch.address}
+                            </p>
+                            <div className="pt-2 border-t border-border flex items-center justify-between gap-2">
+                              <a
+                                href={gmapsUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline text-xs"
+                              >
+                                <Navigation className="size-3.5" />
+                                Buka di Google Maps
+                                <ExternalLink className="size-3" />
+                              </a>
+                            </div>
+                          </div>
+                        </MarkerPopup>
+                      </MapMarker>
+                    );
+                  })}
+            </Map>
           </div>
         </section>
       </main>
+
       <StoreFooter />
     </div>
   );

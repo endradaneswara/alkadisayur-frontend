@@ -185,7 +185,7 @@ export default function StoreLandingPage() {
               src="/background-landing2.webp"
             />
           </div>
-          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-20 sm:px-6 sm:pt-36 sm:pb-28 lg:grid-cols-[1fr_0.92fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-32 xl:px-12">
+          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:grid-cols-[1fr_0.92fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-24 xl:px-12">
             <div className="store-enter flex flex-col items-start">
             <h1
               className="max-w-2xl font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl "
@@ -219,37 +219,7 @@ export default function StoreLandingPage() {
                 Jelajahi kategori
               </Button>
             </div>
-
-            {/* Scroll indicator */}
-            <div className="mt-12 flex flex-col items-center gap-1.5 self-center sm:self-auto" aria-hidden="true">
-              <span className="text-[10px] font-semibold tracking-[0.18em] uppercase text-primary/60">Gulir ke bawah</span>
-              <div className="flex flex-col items-center gap-0.5 animate-bounce">
-                <span className="block h-5 w-px rounded-full bg-primary/30" />
-                <span className="block size-1.5 rounded-full bg-primary/50" />
-              </div>
-            </div>
           </div>
-          </div>
-
-          {/* Decorative wave bottom transition */}
-          <div className="absolute inset-x-0 bottom-0 z-10 leading-none" aria-hidden="true">
-            <svg
-              viewBox="0 0 1440 80"
-              xmlns="http://www.w3.org/2000/svg"
-              preserveAspectRatio="none"
-              className="w-full h-16 sm:h-20"
-              style={{ display: "block" }}
-            >
-              <path
-                d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z"
-                fill="hsl(var(--secondary) / 0.4)"
-                opacity="0.6"
-              />
-              <path
-                d="M0,55 C360,20 720,75 1080,45 C1260,30 1380,60 1440,55 L1440,80 L0,80 Z"
-                fill="hsl(var(--background))"
-              />
-            </svg>
           </div>
         </section>
 
