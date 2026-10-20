@@ -47,11 +47,11 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { toast } from "@/components/ui/toast";
+import { useAuth } from "@/hooks/useAuth";
 import { formatRupiah } from "@/lib/store-catalog";
-import { clearAuthSession, hasAuthSession } from "@/services/api";
+import { clearAuthSession } from "@/services/api";
 import { logout } from "@/services/authService";
-import { getProfile } from "@/services/profileService";
-import type { PenggunaLogin, RolePengguna } from "@/types";
+import type { RolePengguna } from "@/types";
 
 function RoleBadge({ role }: { role?: RolePengguna }) {
   if (role === "superAdmin") {
@@ -66,7 +66,7 @@ function RoleBadge({ role }: { role?: RolePengguna }) {
     return (
       <Badge className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20">
         <ShieldCheck className="mr-1 size-3" />
-        Admin Cabang
+        Admin
       </Badge>
     );
   }
@@ -80,47 +80,24 @@ function RoleBadge({ role }: { role?: RolePengguna }) {
 
 export function NavUser({
   user,
-  currentUser: initialCurrentUser,
 }: {
   user: {
     name: string;
     email: string;
     avatar: string;
   };
-  currentUser?: PenggunaLogin | null;
 }) {
   const router = useRouter();
   const { isMobile } = useSidebar();
+  const { currentUser, refreshProfile, clearUser } = useAuth();
 
   const [profileSheetOpen, setProfileSheetOpen] = React.useState(false);
-  const [profileData, setProfileData] = React.useState<PenggunaLogin | null>(
-    initialCurrentUser ?? null,
-  );
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
-  React.useEffect(() => {
-    if (initialCurrentUser) {
-      setProfileData(initialCurrentUser);
-    }
-  }, [initialCurrentUser]);
-
-  const fetchProfile = React.useCallback(async () => {
-    if (!hasAuthSession()) return;
-    try {
-      const res = await getProfile();
-      setProfileData(res.data);
-    } catch {
-    }
-  }, []);
-
-  React.useEffect(() => {
-    if (!profileData && hasAuthSession()) {
-      void fetchProfile();
-    }
-  }, [profileData, fetchProfile]);
+  const profileData = currentUser ?? null;
 
   const handleOpenProfileSheet = () => {
-    void fetchProfile();
+    void refreshProfile();
     setProfileSheetOpen(true);
   };
 
@@ -129,6 +106,7 @@ export function NavUser({
     try {
       await logout();
       clearAuthSession();
+      clearUser();
       toast.add({
         title: "Logout berhasil",
         description: "Anda telah keluar dari sesi akun.",
@@ -137,6 +115,7 @@ export function NavUser({
       router.replace("/store/akun/login");
     } catch {
       clearAuthSession();
+      clearUser();
       toast.add({
         title: "Sesi berakhir",
         description: "Anda telah keluar dari aplikasi.",
@@ -209,7 +188,7 @@ export function NavUser({
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  onClick={handleOpenProfileSheet}
+                  onClick={() => setProfileSheetOpen(true)}
                   className="cursor-pointer"
                 >
                   <CircleUserRoundIcon className="mr-2 size-4" />
@@ -230,7 +209,7 @@ export function NavUser({
                 className="cursor-pointer text-destructive focus:text-destructive"
               >
                 <LogOutIcon className="mr-2 size-4" />
-                {isLoggingOut ? "Keluar..." : "Keluar"}
+                {isLoggingOut ? "Keluar..." : "Logout"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

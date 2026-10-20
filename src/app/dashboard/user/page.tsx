@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Calendar,
@@ -19,8 +18,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
+import { AccessGuard } from "@/components/access-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,7 +46,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -58,12 +55,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/toast";
 import { getErrorMessage } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
 import { listPengguna, updateRolePengguna } from "@/services/penggunaService";
-import { getProfile } from "@/services/profileService";
-import type { Pengguna, PenggunaLogin, RolePengguna } from "@/types";
+import type { Pengguna, RolePengguna } from "@/types";
 
 function formatDate(dateStr?: string | null): string {
   if (!dateStr) return "-";
@@ -104,9 +100,19 @@ function RoleBadge({ role }: { role: RolePengguna }) {
 }
 
 export default function UserManagementPage() {
-  const router = useRouter();
+  return (
+    <AccessGuard
+      roles={["superAdmin"]}
+      message="Halaman manajemen akun hanya dapat diakses oleh Super Admin."
+    >
+      <UserManagementContent />
+    </AccessGuard>
+  );
+}
 
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(null);
+function UserManagementContent() {
+  const { currentUser, isLoading: isLoadingUser } = useAuth();
+
   const [userList, setUserList] = React.useState<Pengguna[]>([]);
   const [page, setPage] = React.useState(1);
   const [lastPage, setLastPage] = React.useState(1);
@@ -115,7 +121,6 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filterRole, setFilterRole] = React.useState<string>("semua");
 
-  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isUpdatingRole, setIsUpdatingRole] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -124,27 +129,6 @@ export default function UserManagementPage() {
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<Pengguna | null>(null);
   const [selectedRole, setSelectedRole] = React.useState<RolePengguna>("customer");
-
-  React.useEffect(() => {
-    let isCurrent = true;
-    if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
-      return;
-    }
-    void getProfile()
-      .then((res) => {
-        if (isCurrent) setCurrentUser(res.data);
-      })
-      .catch((err: unknown) => {
-        if (isCurrent) setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoadingUser(false);
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
 
   // Load users
   const loadUsers = React.useCallback(async () => {
@@ -172,7 +156,6 @@ export default function UserManagementPage() {
     void loadUsers();
   }, [loadUsers]);
 
-  // Client-side filtering for search & role
   const filteredUsers = React.useMemo(() => {
     return userList.filter((u) => {
       const matchSearch =
@@ -231,12 +214,8 @@ export default function UserManagementPage() {
   const hasActiveFilter = searchQuery !== "" || filterRole !== "semua";
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <SiteHeader />
-
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+    <>
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -258,7 +237,6 @@ export default function UserManagementPage() {
             </Alert>
           )}
 
-          {/* Alert Error */}
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="size-4" />
@@ -269,8 +247,7 @@ export default function UserManagementPage() {
             </Alert>
           )}
 
-          {/* Access Denied for Non-SuperAdmin */}
-          {!isLoadingUser && currentUser && currentUser.role !== "superAdmin" ? (
+          {currentUser && currentUser.role !== "superAdmin" ? (
             <Card className="border-border">
               <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
@@ -283,7 +260,7 @@ export default function UserManagementPage() {
                   Halaman Manajemen Akun hanya dapat diakses oleh Super Administrator. Silakan hubungi pengelola sistem.
                 </p>
                 <Button
-                  onClick={() => router.push("/dashboard")}
+                  onClick={() => (window.location.href = "/dashboard")}
                   className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   Kembali ke Dashboard
@@ -317,7 +294,6 @@ export default function UserManagementPage() {
                       />
                     </div>
 
-                    {/* Role Filter */}
                     <Select
                       value={filterRole}
                       onValueChange={(v) => setFilterRole(v ?? "semua")}
@@ -412,7 +388,7 @@ export default function UserManagementPage() {
                             className="border-b border-border transition-colors hover:bg-muted/30"
                           >
                             <TableCell className="text-center text-xs text-muted-foreground">
-                              {(page - 1) * 15 + idx + 1}
+                              {(page - 1) * 20 + idx + 1}
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-col">
@@ -464,7 +440,6 @@ export default function UserManagementPage() {
                 </div>
               </CardContent>
 
-              {/* Pagination */}
               {lastPage > 1 && (
                 <CardFooter className="flex items-center justify-between border-t border-border p-4">
                   <div className="text-xs text-muted-foreground">
@@ -501,7 +476,6 @@ export default function UserManagementPage() {
           )}
         </div>
 
-        {/* Sheet Edit Role */}
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetContent className="w-full sm:max-w-md p-6">
             <SheetHeader className="mb-6">
@@ -599,7 +573,6 @@ export default function UserManagementPage() {
             )}
           </SheetContent>
         </Sheet>
-      </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }

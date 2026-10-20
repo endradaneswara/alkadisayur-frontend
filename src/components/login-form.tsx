@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/toast";
+import { useAuth } from "@/hooks/useAuth";
 import { googleUrl, login as loginUser } from "@/services/authService"
 import { ApiError } from "@/services/apiError"
 
@@ -31,6 +32,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,6 +60,7 @@ export function LoginForm({
 
     try {
       await loginUser({ login: login.trim(), password });
+      await refreshProfile();
       toast.add({
         title: "Login berhasil",
         description: "Selamat datang kembali.",

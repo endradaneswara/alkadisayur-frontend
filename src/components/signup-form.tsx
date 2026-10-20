@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
+import { useAuth } from "@/hooks/useAuth";
 import { ApiError } from "@/services/apiError";
 import { googleUrl, register as registerUser } from "@/services/authService";
 
@@ -27,6 +28,7 @@ export function SignupForm({
   ...props
 }: React.ComponentProps<typeof Card>) {
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,6 +62,7 @@ export function SignupForm({
         password,
         password_confirmation: passwordConfirmation,
       });
+      await refreshProfile();
       toast.add({
         title: "Registrasi berhasil",
         description: "Akun Alkadi Anda berhasil dibuat.",

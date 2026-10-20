@@ -4,11 +4,13 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 import { toast } from "@/components/ui/toast";
+import { useAuth } from "@/hooks/useAuth";
 import { clearAuthSession, setAuthSession } from "@/services/api";
 import { getProfile } from "@/services/profileService";
 
 export default function GoogleAuthCallbackPage() {
   const router = useRouter();
+  const { refreshProfile } = useAuth();
   const hasHandledCallback = useRef(false);
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function GoogleAuthCallbackPage() {
     void getProfile()
       .then(() => {
         setAuthSession();
+        void refreshProfile();
         toast.add({
           title: "Autentikasi Google berhasil",
           description: "Anda akan diarahkan ke Alkadi.",

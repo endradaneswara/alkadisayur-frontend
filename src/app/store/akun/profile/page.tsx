@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -29,38 +29,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getProfile } from "@/services/profileService";
+import { useAuth } from "@/hooks/useAuth";
 import type { PenggunaLogin } from "@/types";
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<PenggunaLogin | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { currentUser, isLoading, refreshProfile } = useAuth();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  useEffect(() => {
-    let isCurrent = true;
-
-    void getProfile()
-      .then((response) => {
-        if (isCurrent) {
-          setUser(response.data);
-        }
-      })
-      .catch((error: unknown) => {
-        console.error("Gagal memuat profil pengguna.", error);
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, []);
-
-  const initial = user?.name?.trim().charAt(0).toUpperCase() ?? "U";
+  const initial = currentUser?.name?.trim().charAt(0).toUpperCase() ?? "U";
 
   return (
     <StorePageShell>
@@ -98,8 +74,8 @@ export default function ProfilePage() {
                 <div className="flex flex-wrap items-end justify-between gap-4 -mt-16 sm:-mt-20 mb-6">
                   <Avatar className="size-28 border-4 border-background bg-card shadow-lg sm:size-32">
                     <AvatarImage
-                      alt={user?.name ?? "User avatar"}
-                      src={user?.avatar ?? undefined}
+                      alt={currentUser?.name ?? "User avatar"}
+                      src={currentUser?.avatar ?? undefined}
                     />
                     <AvatarFallback className="bg-primary/10 text-3xl font-bold text-primary">
                       {initial}
@@ -123,15 +99,15 @@ export default function ProfilePage() {
                   <div>
                     <div className="flex items-center gap-3">
                       <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
-                        {user?.name ?? "Pelanggan Alkadi"}
+                        {currentUser?.name ?? "Pelanggan Alkadi"}
                       </h2>
                       <Badge className="bg-primary/10 text-primary border border-primary/20 capitalize font-semibold">
                         <CheckCircle2 className="mr-1 size-3" />
-                        {user?.role ?? "Customer"}
+                        {currentUser?.role ?? "Customer"}
                       </Badge>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {user?.email ?? "-"}
+                      {currentUser?.email ?? "-"}
                     </p>
                   </div>
                 </div>
@@ -145,7 +121,7 @@ export default function ProfilePage() {
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Alamat Email</p>
                       <p className="font-semibold text-sm truncate text-foreground">
-                        {user?.email ?? "-"}
+                        {currentUser?.email ?? "-"}
                       </p>
                     </div>
                   </div>
@@ -157,7 +133,7 @@ export default function ProfilePage() {
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Nomor Telepon / WA</p>
                       <p className="font-semibold text-sm truncate text-foreground">
-                        {user?.no_hp ?? "Belum ditambahkan"}
+                        {currentUser?.no_hp ?? "Belum ditambahkan"}
                       </p>
                     </div>
                   </div>
@@ -169,9 +145,9 @@ export default function ProfilePage() {
                     <div className="min-w-0">
                       <p className="text-xs text-muted-foreground">Status Akun</p>
                       <p className="font-semibold text-sm capitalize text-foreground">
-                        {user?.role === "superAdmin"
+                        {currentUser?.role === "superAdmin"
                           ? "Super Administrator"
-                          : user?.role === "admin"
+                          : currentUser?.role === "admin"
                           ? "Administrator"
                           : "Pengguna Terverifikasi"}
                       </p>
@@ -258,12 +234,12 @@ export default function ProfilePage() {
         )}
 
         {/* Modal Sheet Edit Profile */}
-        {!isLoading && user ? (
+        {!isLoading && currentUser ? (
           <ProfileEditSheet
             open={isSheetOpen}
             onOpenChange={setIsSheetOpen}
-            user={user}
-            onSave={setUser}
+            user={currentUser}
+            onSave={() => void refreshProfile()}
           />
         ) : null}
       </div>

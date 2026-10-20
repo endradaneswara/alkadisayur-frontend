@@ -1,11 +1,11 @@
-"use client"
 
-import * as React from "react"
+"use client";
 
-import { NavDocuments } from "@/components/nav-documents"
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import * as React from "react";
+
+import { NavDocuments } from "@/components/nav-documents";
+import { NavMain } from "@/components/nav-main";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -14,7 +14,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+
 import {
   BellIcon,
   FileIcon,
@@ -26,60 +27,22 @@ import {
   StarIcon,
   UsersIcon,
   Vegan,
-} from "lucide-react"
+} from "lucide-react";
 
-import { hasAuthSession } from "@/services/api"
-import { getProfile } from "@/services/profileService"
-import type { PenggunaLogin } from "@/types"
+import type { PenggunaLogin } from "@/types";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(null)
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  currentUser: PenggunaLogin;
+};
 
-  React.useEffect(() => {
-    let isCurrent = true
-    if (hasAuthSession()) {
-      void getProfile()
-        .then((res) => {
-          if (isCurrent) setCurrentUser(res.data)
-        })
-        .catch(() => undefined)
-    }
-    return () => {
-      isCurrent = false
-    }
-  }, [])
+export function AppSidebar({
+  currentUser,
+  ...props
+}: AppSidebarProps) {
+  const isSuperAdmin = currentUser.role === "superAdmin";
 
-  const isSuperAdmin = currentUser?.role === "superAdmin"
-
-  // Untuk admin cabang biasa: HANYA dashboard, penjualan, pesanan, dan notifikasi
   const navMain = React.useMemo(() => {
-    if (!isSuperAdmin) {
-      return [
-        {
-          title: "Dashboard",
-          url: "/dashboard",
-          icon: <LayoutDashboardIcon />,
-        },
-        {
-          title: "Penjualan",
-          url: "/dashboard/penjualan",
-          icon: <NotebookPen />,
-        },
-        {
-          title: "Pesanan",
-          url: "/dashboard/pesanan",
-          icon: <ShoppingCartMinus />,
-        },
-        {
-          title: "Notifikasi",
-          url: "/dashboard/notifikasi",
-          icon: <BellIcon />,
-        },
-      ]
-    }
-
-    // Untuk Super Admin: semua menu termasuk produk & kategori
-    return [
+    const items = [
       {
         title: "Dashboard",
         url: "/dashboard",
@@ -100,22 +63,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/dashboard/notifikasi",
         icon: <BellIcon />,
       },
-      {
-        title: "Produk",
-        url: "/dashboard/produk",
-        icon: <FileIcon />,
-      },
-      {
-        title: "Kategori",
-        url: "/dashboard/kategori",
-        icon: <FolderIcon />,
-      },
-    ]
-  }, [isSuperAdmin])
+    ];
+
+    if (isSuperAdmin) {
+      items.push(
+        {
+          title: "Produk",
+          url: "/dashboard/produk",
+          icon: <FileIcon />,
+        },
+        {
+          title: "Kategori",
+          url: "/dashboard/kategori",
+          icon: <FolderIcon />,
+        },
+      );
+    }
+
+    return items;
+  }, [isSuperAdmin]);
 
   const documents = React.useMemo(() => {
     if (!isSuperAdmin) {
-      return []
+      return [];
     }
 
     return [
@@ -125,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: <UsersIcon />,
       },
       {
-        name: "Management lokasi",
+        name: "Management Lokasi",
         url: "/dashboard/lokasi",
         icon: <MapPin />,
       },
@@ -134,16 +104,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         url: "/store/akun/ulasan",
         icon: <StarIcon />,
       },
-    ]
-  }, [isSuperAdmin])
+    ];
+  }, [isSuperAdmin]);
 
-  const user = React.useMemo(() => {
-    return {
-      name: currentUser?.name || "Admin",
-      email: currentUser?.email || "admin@alkadi.com",
-      avatar: currentUser?.avatar || "/avatars/shadcn.jpg",
-    }
-  }, [currentUser])
+  const user = React.useMemo(
+    () => ({
+      name: currentUser.name || "Admin",
+      email: currentUser.email || "admin@alkadi.com",
+      avatar: currentUser.avatar || "/avatars/shadcn.jpg",
+    }),
+    [currentUser],
+  );
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -155,18 +126,25 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               render={<a href="/store" />}
             >
               <Vegan className="size-5!" />
-              <span className="text-base font-semibold">Alkadi</span>
+              <span className="text-base font-semibold">
+                Alkadi
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
+
       <SidebarContent>
         <NavMain items={navMain} />
-        {documents.length > 0 && <NavDocuments items={documents} />}
+
+        {documents.length > 0 && (
+          <NavDocuments items={documents} />
+        )}
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={user} currentUser={currentUser} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

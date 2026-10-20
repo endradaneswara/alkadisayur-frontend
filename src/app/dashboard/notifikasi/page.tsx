@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   Bell,
   BellOff,
@@ -13,8 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
+import { AccessGuard } from "@/components/access-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -37,19 +35,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/toast";
 import { getErrorMessage } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
 import {
   deleteAdminNotifikasi,
   listAdminNotifikasi,
   markAdminNotifikasiRead,
   markAllAdminNotifikasiRead,
 } from "@/services/notifikasiService";
-import { getProfile } from "@/services/profileService";
-import type { Notifikasi, PenggunaLogin, StatusPesanan } from "@/types";
+import type { Notifikasi, StatusPesanan } from "@/types";
 
 function getStatusBadgeVariant(
   status: StatusPesanan | undefined,
@@ -106,42 +102,28 @@ function formatWaktu(dateStr?: string | null): string {
 }
 
 export default function NotifikasiPage() {
-  const router = useRouter();
-
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(
-    null,
+  return (
+    <AccessGuard
+      roles={["admin", "superAdmin"]}
+      message="Halaman notifikasi hanya dapat diakses oleh Admin dan Super Admin."
+    >
+      <NotifikasiContent />
+    </AccessGuard>
   );
+}
+
+function NotifikasiContent() {
+  const { currentUser, isLoading: isLoadingUser } = useAuth();
+
   const [notifikasiList, setNotifikasiList] = React.useState<Notifikasi[]>([]);
   const [page, setPage] = React.useState(1);
   const [lastPage, setLastPage] = React.useState(1);
   const [totalUnread, setTotalUnread] = React.useState(0);
 
-  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isMarkingAll, setIsMarkingAll] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
-
-  React.useEffect(() => {
-    let isCurrent = true;
-    if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
-      return;
-    }
-    void getProfile()
-      .then((res) => {
-        if (isCurrent) setCurrentUser(res.data);
-      })
-      .catch((err: unknown) => {
-        if (isCurrent) setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoadingUser(false);
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
 
   const loadNotifikasi = React.useCallback(async () => {
     if (isLoadingUser || !currentUser) return;
@@ -241,20 +223,9 @@ export default function NotifikasiPage() {
   };
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader title="Notifikasi" />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 
               {/* Page Header */}
               <div className="px-4 lg:px-6">
@@ -533,7 +504,5 @@ export default function NotifikasiPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
   ChevronRight,
@@ -19,8 +18,7 @@ import {
   Upload,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
+import { AccessGuard } from "@/components/access-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -59,7 +57,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -69,9 +66,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/toast";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
 import {
   createBarang,
   deleteBarang,
@@ -87,8 +84,7 @@ import {
   type ImportPreviewResult,
 } from "@/services/dataService";
 import { listKategori } from "@/services/kategoriService";
-import { getProfile } from "@/services/profileService";
-import type { Barang, Kategori, PenggunaLogin, StatusBarang } from "@/types";
+import type { Barang, Kategori, StatusBarang } from "@/types";
 
 interface BarangFilterParams {
   page?: number;
@@ -161,11 +157,19 @@ function StatusBadge({ status }: { status: StatusBarang }) {
 }
 
 export default function ProdukPage() {
-  const router = useRouter();
-
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(
-    null,
+  return (
+    <AccessGuard
+      roles={["admin", "superAdmin"]}
+      message="Halaman manajemen produk hanya dapat diakses oleh Admin dan Super Admin."
+    >
+      <ProdukContent />
+    </AccessGuard>
   );
+}
+
+function ProdukContent() {
+  const { currentUser, isLoading: isLoadingUser } = useAuth();
+
   const [barangList, setBarangList] = React.useState<Barang[]>([]);
   const [kategoriList, setKategoriList] = React.useState<Kategori[]>([]);
 
@@ -179,7 +183,6 @@ export default function ProdukPage() {
   >("semua");
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
@@ -203,29 +206,6 @@ export default function ProdukPage() {
   const [isImporting, setIsImporting] = React.useState(false);
   const [previewResult, setPreviewResult] = React.useState<ImportPreviewResult | null>(null);
   const [importError, setImportError] = React.useState<string | null>(null);
-
-  // Auth
-  React.useEffect(() => {
-    let isCurrent = true;
-    if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
-      return;
-    }
-    void getProfile()
-      .then((res) => {
-        if (!isCurrent) return;
-        setCurrentUser(res.data);
-      })
-      .catch((err: unknown) => {
-        if (isCurrent) setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoadingUser(false);
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
 
   // Load kategori
   React.useEffect(() => {
@@ -536,20 +516,10 @@ export default function ProdukPage() {
   };
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader title="Produk" />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <>
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 
               {/* Page Header */}
               <div className="px-4 lg:px-6">
@@ -960,7 +930,6 @@ export default function ProdukPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
 
       {/* Product Detail / Form Sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -1513,6 +1482,6 @@ export default function ProdukPage() {
           </div>
         </SheetContent>
       </Sheet>
-    </SidebarProvider>
+    </>
   );
 }

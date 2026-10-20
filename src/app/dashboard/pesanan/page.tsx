@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Building2,
@@ -19,8 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
+import { AccessGuard } from "@/components/access-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,7 +45,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -57,19 +54,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/toast";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
 import { listLokasi } from "@/services/lokasiService";
 import {
   listAdminPesanan,
   updateAdminPesananStatus,
 } from "@/services/pesananService";
-import { getProfile } from "@/services/profileService";
 import type {
   Lokasi,
   MetodePesanan,
-  PenggunaLogin,
   Pesanan,
   StatusPesanan,
 } from "@/types";
@@ -156,11 +151,19 @@ function getMetodeLabel(metode: MetodePesanan): string {
 }
 
 export default function PesananPage() {
-  const router = useRouter();
-
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(
-    null,
+  return (
+    <AccessGuard
+      roles={["admin", "superAdmin"]}
+      message="Halaman pesanan hanya dapat diakses oleh Admin dan Super Admin."
+    >
+      <PesananContent />
+    </AccessGuard>
   );
+}
+
+function PesananContent() {
+  const { currentUser, isLoading: isLoadingUser } = useAuth();
+
   const [pesananList, setPesananList] = React.useState<Pesanan[]>([]);
   const [lokasiList, setLokasiList] = React.useState<Lokasi[]>([]);
 
@@ -177,7 +180,6 @@ export default function PesananPage() {
   >("semua");
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [updatingId, setUpdatingId] = React.useState<number | null>(null);
@@ -187,29 +189,11 @@ export default function PesananPage() {
   );
 
   React.useEffect(() => {
-    let isCurrent = true;
-    if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
-      return;
+    if (!currentUser || currentUser.role !== "admin") return;
+    if (currentUser.lokasi_id) {
+      setFilterLokasi(currentUser.lokasi_id);
     }
-    void getProfile()
-      .then((res) => {
-        if (!isCurrent) return;
-        setCurrentUser(res.data);
-        if (res.data.role === "admin" && res.data.lokasi_id) {
-          setFilterLokasi(res.data.lokasi_id);
-        }
-      })
-      .catch((err: unknown) => {
-        if (isCurrent) setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoadingUser(false);
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
+  }, [currentUser]);
 
   React.useEffect(() => {
     if (!currentUser || currentUser.role !== "superAdmin") return;
@@ -320,20 +304,9 @@ export default function PesananPage() {
   }, [isSuperAdmin, filterLokasi, lokasiList, currentUser]);
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader title="Pesanan" />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 
               {/* Header */}
               <div className="px-4 lg:px-6">
@@ -965,7 +938,5 @@ export default function PesananPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   );
 }

@@ -18,10 +18,10 @@ import { StorePageShell } from "@/components/store-page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/toast";
 import { getErrorMessage } from "@/lib/store-catalog";
 import { hasAuthSession } from "@/services/api";
-import { getProfile } from "@/services/profileService";
 import {
   createUlasan,
   deleteUlasan,
@@ -34,8 +34,8 @@ const ratingLabels = ["Sangat Buruk", "Buruk", "Cukup", "Bagus", "Sangat Bagus"]
 
 export default function ReviewsPage() {
   const router = useRouter();
+  const { currentUser } = useAuth();
   const [ownReview, setOwnReview] = useState<Ulasan | null>(null);
-  const [userId, setUserId] = useState<number | null>(null);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -46,26 +46,25 @@ export default function ReviewsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!hasAuthSession()) {
-        router.replace("/store/akun/login");
-        return;
-      }
-      void loadData();
-    });
+    if (!hasAuthSession()) {
+      router.replace("/store/akun/login");
+      return;
+    }
+    // Tunggu profil tersedia dari AuthProvider agar uid sudah benar.
+    if (!currentUser) return;
+    void loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router]);
+  }, [router, currentUser?.id]);
 
   async function loadData(): Promise<void> {
     setIsLoading(true);
     try {
-      const [profileRes, reviewsRes] = await Promise.all([
-        getProfile(),
-        listUlasan({ page: 1 }),
-      ]);
-      const uid = profileRes.data.id;
-      setUserId(uid);
-      const mine = reviewsRes.data.find((r) => r.user_id === uid) ?? null;
+      const reviewsRes = await listUlasan({ page: 1 });
+      const uid = currentUser?.id;
+      const mine =
+        uid !== undefined
+          ? (reviewsRes.data.find((r) => r.user_id === uid) ?? null)
+          : null;
       setOwnReview(mine);
       if (mine) {
         setRating(mine.rating);

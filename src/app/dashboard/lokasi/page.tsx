@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Banknote,
@@ -18,8 +17,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
+import { AccessGuard } from "@/components/access-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -51,7 +49,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -61,9 +58,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/toast";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
 import {
   createLokasi,
   deleteLokasi,
@@ -71,8 +68,7 @@ import {
   updateLokasi,
   type LokasiPayload,
 } from "@/services/lokasiService";
-import { getProfile } from "@/services/profileService";
-import type { Lokasi, PenggunaLogin } from "@/types";
+import type { Lokasi } from "@/types";
 
 type FormMode = "tambah" | "edit";
 
@@ -95,9 +91,19 @@ const EMPTY_FORM: LokasiFormState = {
 };
 
 export default function LokasiManagementPage() {
-  const router = useRouter();
+  return (
+    <AccessGuard
+      roles={["admin", "superAdmin"]}
+      message="Halaman manajemen lokasi hanya dapat diakses oleh Admin dan Super Admin."
+    >
+      <LokasiContent />
+    </AccessGuard>
+  );
+}
 
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(null);
+function LokasiContent() {
+  const { currentUser, isLoading: isLoadingUser } = useAuth();
+
   const [lokasiList, setLokasiList] = React.useState<Lokasi[]>([]);
   const [page, setPage] = React.useState(1);
   const [lastPage, setLastPage] = React.useState(1);
@@ -107,7 +113,6 @@ export default function LokasiManagementPage() {
   const [searchQuery, setSearchQuery] = React.useState("");
 
   // Loading & status
-  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSaving, setIsSaving] = React.useState(false);
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
@@ -122,28 +127,6 @@ export default function LokasiManagementPage() {
   const [form, setForm] = React.useState<LokasiFormState>(EMPTY_FORM);
 
   const isSuperAdmin = currentUser?.role === "superAdmin";
-
-  // Auth check
-  React.useEffect(() => {
-    let isCurrent = true;
-    if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
-      return;
-    }
-    void getProfile()
-      .then((res) => {
-        if (isCurrent) setCurrentUser(res.data);
-      })
-      .catch((err: unknown) => {
-        if (isCurrent) setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoadingUser(false);
-      });
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
 
   // Load locations
   const loadLokasi = React.useCallback(async () => {
@@ -296,12 +279,8 @@ export default function LokasiManagementPage() {
   };
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <SiteHeader />
-
-        <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+    <>
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
           {/* Header */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -741,7 +720,6 @@ export default function LokasiManagementPage() {
             </form>
           </SheetContent>
         </Sheet>
-      </SidebarInset>
-    </SidebarProvider>
+    </>
   );
 }

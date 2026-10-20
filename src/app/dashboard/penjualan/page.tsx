@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   BanknoteIcon,
   Building2,
@@ -21,9 +20,8 @@ import {
   Truck,
 } from "lucide-react";
 
-import { AppSidebar } from "@/components/app-sidebar";
 import { ChartPenjualan } from "@/components/chart-area-interactive";
-import { SiteHeader } from "@/components/site-header";
+import { AccessGuard } from "@/components/access-guard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,7 +49,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -62,7 +59,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
+import { useAuth } from "@/hooks/useAuth";
 import { getDashboard } from "@/services/dashboardService";
 import { listLokasi } from "@/services/lokasiService";
 import {
@@ -71,22 +68,28 @@ import {
   listPenjualanAdmin,
   listPenjualanSuperAdmin,
 } from "@/services/penjualanService";
-import { getProfile } from "@/services/profileService";
 import type {
   Dashboard,
   Lokasi,
-  PenggunaLogin,
   Penjualan,
   RentangGrafik,
   RingkasanPenjualan,
 } from "@/types";
 
 export default function PenjualanPage() {
-  const router = useRouter();
-
-  const [currentUser, setCurrentUser] = React.useState<PenggunaLogin | null>(
-    null,
+  return (
+    <AccessGuard
+      roles={["admin", "superAdmin"]}
+      message="Halaman penjualan hanya dapat diakses oleh Admin dan Super Admin."
+    >
+      <PenjualanContent />
+    </AccessGuard>
   );
+}
+
+function PenjualanContent() {
+  const { currentUser, isLoading: isLoadingUser } = useAuth();
+
   const [dashboard, setDashboard] = React.useState<Dashboard | null>(null);
   const [ringkasan, setRingkasan] = React.useState<RingkasanPenjualan | null>(
     null,
@@ -104,7 +107,6 @@ export default function PenjualanPage() {
   const [tanggalMulai, setTanggalMulai] = React.useState("");
   const [tanggalSelesai, setTanggalSelesai] = React.useState("");
 
-  const [isLoadingUser, setIsLoadingUser] = React.useState(true);
   const [isLoadingDashboard, setIsLoadingDashboard] = React.useState(true);
   const [isLoadingTable, setIsLoadingTable] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -116,33 +118,9 @@ export default function PenjualanPage() {
   const isAdmin = currentUser?.role === "admin";
 
   React.useEffect(() => {
-    let isCurrent = true;
-
-    if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
-      return;
-    }
-
-    void getProfile()
-      .then((res) => {
-        if (!isCurrent) return;
-        setCurrentUser(res.data);
-        if (res.data.role === "admin" && res.data.lokasi_id) {
-          setSelectedLokasiId(res.data.lokasi_id);
-        }
-      })
-      .catch((err: unknown) => {
-        if (!isCurrent) return;
-        setError(getErrorMessage(err));
-      })
-      .finally(() => {
-        if (isCurrent) setIsLoadingUser(false);
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
+    if (!isAdmin || !currentUser?.lokasi_id) return;
+    setSelectedLokasiId(currentUser.lokasi_id);
+  }, [isAdmin, currentUser]);
 
   React.useEffect(() => {
     if (!isSuperAdmin) return;
@@ -291,20 +269,9 @@ export default function PenjualanPage() {
   ];
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader title="Penjualan" />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               {/* Header and Controls */}
               <div className="flex flex-col gap-4 px-4 lg:px-6">
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-xs md:p-6">
@@ -907,7 +874,5 @@ export default function PenjualanPage() {
             </div>
           </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
   );
 }
