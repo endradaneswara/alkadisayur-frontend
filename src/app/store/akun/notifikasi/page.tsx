@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   Bell,
   CheckCheck,
   Clock,
-  Package,
   Trash2,
 } from "lucide-react";
 
@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
 import { hasAuthSession } from "@/services/api";
 import {
@@ -31,88 +32,110 @@ import type { Notifikasi } from "@/types";
 
 export default function NotificationsPage() {
   const router = useRouter();
-  const [notifications, setNotifications] = useState<Notifikasi[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadNotifications = useCallback(async (): Promise<void> => {
-    try {
-      const response = await listNotifikasi({ page: 1 });
-      setNotifications(response.data);
-      setError(null);
-    } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!hasAuthSession()) {
-        router.replace("/store/akun/login");
-        return;
-      }
-      return loadNotifications();
-    });
-  }, [loadNotifications, router]);
-
-  async function markRead(notification: Notifikasi): Promise<void> {
-    if (notification.sudah_dibaca) {
-      return;
+    if (!hasAuthSession()) {
+      router.replace("/store/akun/login");
     }
-    try {
-      await markNotifikasiRead(notification.id);
-      setNotifications((current) =>
-        current.map((item) =>
+  }, [router]);
+
+  const notificationsQuery = useQuery({
+    queryKey: queryKeys.notifikasi.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listNotifikasi({ page: 1 });
+      return response.data;
+    },
+    enabled: hasAuthSession(),
+  });
+
+  const notifications = notificationsQuery.data ?? [];
+  const isLoading = notificationsQuery.isLoading;
+  const error = notificationsQuery.error instanceof Error
+    ? getErrorMessage(notificationsQuery.error)
+    : null;
+
+  const markReadMutation = useMutation({
+    mutationFn: async (notification: Notifikasi) => {
+      return markNotifikasiRead(notification.id);
+    },
+    onSuccess: async (response, notification) => {
+      // Perbarui cache agar tidak perlu memuat ulang dari server.
+      queryClient.setQueryData(queryKeys.notifikasi.list({ page: 1 }), (current: Notifikasi[] | undefined) =>
+        current?.map((item) =>
           item.id === notification.id
             ? { ...item, sudah_dibaca: true, dibaca_pada: new Date().toISOString() }
             : item,
         ),
       );
-    } catch (markError: unknown) {
+      void response;
+    },
+    onError: (markError: Error) => {
       toast.add({
         title: "Notifikasi tidak dapat diperbarui",
-        description: getErrorMessage(markError),
+        description: markError.message,
         type: "error",
       });
-    }
-  }
+    },
+  });
 
-  async function markAllRead(): Promise<void> {
-    try {
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
       await markAllNotifikasiRead();
-      await loadNotifications();
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.notifikasi.all });
       toast.add({
         title: "Notifikasi diperbarui",
         description: "Semua notifikasi ditandai sudah dibaca.",
         type: "success",
       });
-    } catch (markError: unknown) {
+    },
+    onError: (markError: Error) => {
       toast.add({
         title: "Notifikasi tidak dapat diperbarui",
-        description: getErrorMessage(markError),
+        description: markError.message,
         type: "error",
       });
-    }
-  }
+    },
+  });
 
-  async function removeNotification(notification: Notifikasi): Promise<void> {
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (notification: Notifikasi) => {
       await deleteNotifikasi(notification.id);
-      setNotifications((current) => current.filter((item) => item.id !== notification.id));
+    },
+    onSuccess: async (_result, notification) => {
+      queryClient.setQueryData(queryKeys.notifikasi.list({ page: 1 }), (current: Notifikasi[] | undefined) =>
+        current?.filter((item) => item.id !== notification.id),
+      );
       toast.add({
         title: "Notifikasi dihapus",
         description: "Notifikasi berhasil dihapus.",
         type: "success",
       });
-    } catch (deleteError: unknown) {
+    },
+    onError: (deleteError: Error) => {
       toast.add({
         title: "Notifikasi tidak dapat dihapus",
-        description: getErrorMessage(deleteError),
+        description: deleteError.message,
         type: "error",
       });
+    },
+  });
+
+  function markRead(notification: Notifikasi): void {
+    if (notification.sudah_dibaca) {
+      return;
     }
+    void markReadMutation.mutateAsync(notification);
+  }
+
+  function markAllRead(): void {
+    void markAllReadMutation.mutateAsync();
+  }
+
+  function removeNotification(notification: Notifikasi): void {
+    void deleteMutation.mutateAsync(notification);
   }
 
   const unreadCount = notifications.filter((n) => !n.sudah_dibaca).length;
@@ -127,7 +150,7 @@ export default function NotificationsPage() {
           description="Dapatkan kabar terbaru seputar perkembangan status pesanan, pembayaran, dan informasi toko Alkadi."
           action={
             unreadCount > 0 ? (
-              <Button onClick={() => void markAllRead()} variant="outline" size="sm" className="gap-2">
+              <Button onClick={markAllRead} variant="outline" size="sm" className="gap-2">
                 <CheckCheck className="size-4" />
                 Tandai Semua Dibaca ({unreadCount})
               </Button>
@@ -220,7 +243,7 @@ export default function NotificationsPage() {
                           <Link
                             className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
                             href={`/store/pesanan/${notification.pesanan.id}`}
-                            onClick={() => void markRead(notification)}
+                            onClick={() => markRead(notification)}
                           >
                             <span>Lihat Pesanan #{notification.pesanan.nomor_order}</span>
                             <ArrowRight className="size-3" />
@@ -234,7 +257,7 @@ export default function NotificationsPage() {
                     {!notification.sudah_dibaca ? (
                       <Button
                         aria-label={`Tandai ${notification.judul} sudah dibaca`}
-                        onClick={() => void markRead(notification)}
+                        onClick={() => markRead(notification)}
                         size="icon"
                         variant="ghost"
                         className="size-8 text-primary hover:text-primary"
@@ -244,7 +267,7 @@ export default function NotificationsPage() {
                     ) : null}
                     <Button
                       aria-label={`Hapus notifikasi ${notification.judul}`}
-                      onClick={() => void removeNotification(notification)}
+                      onClick={() => removeNotification(notification)}
                       size="icon"
                       variant="ghost"
                       className="size-8 text-muted-foreground hover:text-destructive"

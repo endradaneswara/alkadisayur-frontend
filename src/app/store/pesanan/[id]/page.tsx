@@ -3,15 +3,13 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Calendar,
-  CheckCircle2,
   Clock,
   CreditCard,
   FileText,
-  MapPin,
-  Package,
   PackageCheck,
   ShoppingBag,
   Store,
@@ -32,11 +30,12 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+import { queryKeys } from "@/lib/query-keys";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
 import { hasAuthSession } from "@/services/api";
 import { createPembayaran } from "@/services/pembayaranService";
 import { cancelPesanan, getPesanan } from "@/services/pesananService";
-import type { MetodePembayaran, Pesanan, StatusPesanan } from "@/types";
+import type { MetodePembayaran, StatusPesanan } from "@/types";
 
 const statusLabels: Record<StatusPesanan, string> = {
   pending: "Menunggu Konfirmasi",
@@ -62,96 +61,102 @@ export default function OrderDetailPage() {
   const orderId = Number(params.id);
   const isValidId = Number.isInteger(orderId) && orderId > 0;
   const router = useRouter();
-  const [order, setOrder] = useState<Pesanan | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [isCreatingPayment, setIsCreatingPayment] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<MetodePembayaran>("COD");
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!hasAuthSession()) {
       router.replace("/store/akun/login");
-      return;
     }
-    if (!isValidId) {
-      return;
-    }
+  }, [router]);
 
-    let isCurrent = true;
-    void Promise.resolve()
-      .then(() => getPesanan(orderId))
-      .then((response) => {
-        if (isCurrent) {
-          setOrder(response.data);
-          setError(null);
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (isCurrent) {
-          setError(getErrorMessage(loadError));
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      });
+  const orderQuery = useQuery({
+    queryKey: queryKeys.pesanan.detail(orderId),
+    queryFn: async () => {
+      const response = await getPesanan(orderId);
+      return response.data;
+    },
+    enabled: isValidId && hasAuthSession(),
+  });
 
-    return () => {
-      isCurrent = false;
-    };
-  }, [isValidId, orderId, router]);
+  const order = orderQuery.data ?? null;
+  const isLoading = orderQuery.isLoading;
+  const error = orderQuery.error instanceof Error
+    ? getErrorMessage(orderQuery.error)
+    : null;
 
-  async function handleCancel(): Promise<void> {
-    if (!order || !window.confirm("Batalkan pesanan ini?")) {
-      return;
-    }
-    setIsCancelling(true);
-    try {
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!order) throw new Error("Pesanan tidak ditemukan.");
       const response = await cancelPesanan(order.id);
-      setOrder(response.data);
+      return response.data;
+    },
+    onSuccess: async (updatedOrder) => {
+      queryClient.setQueryData(queryKeys.pesanan.detail(orderId), updatedOrder);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pesanan.all });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.keranjang });
       toast.add({
         title: "Pesanan dibatalkan",
         description: "Status pesanan berhasil diperbarui menjadi dibatalkan.",
         type: "success",
       });
-    } catch (cancelError: unknown) {
+    },
+    onError: (cancelError: Error) => {
       toast.add({
         title: "Pesanan tidak dapat dibatalkan",
-        description: getErrorMessage(cancelError),
+        description: cancelError.message,
         type: "error",
       });
-    } finally {
-      setIsCancelling(false);
-    }
-  }
+    },
+  });
 
-  async function handleCreatePayment(): Promise<void> {
-    if (!order) {
-      return;
-    }
-    setIsCreatingPayment(true);
-    try {
+  const paymentMutation = useMutation({
+    mutationFn: async () => {
+      if (!order) throw new Error("Pesanan tidak ditemukan.");
       const response = await createPembayaran({
         pesanan_id: order.id,
         metode_pembayaran: paymentMethod,
       });
-      setOrder({ ...order, pembayaran: response.data });
+      return response.data;
+    },
+    onSuccess: async (pembayaran) => {
+      if (order) {
+        queryClient.setQueryData(queryKeys.pesanan.detail(orderId), {
+          ...order,
+          pembayaran,
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pembayaran.all });
       toast.add({
         title: "Pembayaran disimpan",
         description: `Metode ${paymentMethod} berhasil disimpan.`,
         type: "success",
       });
-    } catch (paymentError: unknown) {
+    },
+    onError: (paymentError: Error) => {
       toast.add({
         title: "Pembayaran gagal disimpan",
-        description: getErrorMessage(paymentError),
+        description: paymentError.message,
         type: "error",
       });
-    } finally {
-      setIsCreatingPayment(false);
+    },
+  });
+
+  const isCancelling = cancelMutation.isPending;
+  const isCreatingPayment = paymentMutation.isPending;
+
+  function handleCancel(): void {
+    if (!order || !window.confirm("Batalkan pesanan ini?")) {
+      return;
     }
+    void cancelMutation.mutateAsync();
+  }
+
+  function handleCreatePayment(): void {
+    if (!order) {
+      return;
+    }
+    void paymentMutation.mutateAsync();
   }
 
   const canCancel = order?.status === "pending" || order?.status === "diproses";

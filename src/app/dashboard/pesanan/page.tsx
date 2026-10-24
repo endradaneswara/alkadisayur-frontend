@@ -19,6 +19,9 @@ import {
 } from "lucide-react";
 
 import { AccessGuard } from "@/components/access-guard";
+import {
+  StatusBayarSelect,
+} from "@/components/pesanan-table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,8 +58,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
+import { usePagination } from "@/hooks/usePagination";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { toast } from "@/components/ui/toast";
-import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
+import { formatRupiah } from "@/lib/store-catalog";
 import { listLokasi } from "@/services/lokasiService";
 import {
   listAdminPesanan,
@@ -66,6 +72,8 @@ import type {
   Lokasi,
   MetodePesanan,
   Pesanan,
+  ResponsApiPaginated,
+  StatusPembayaran,
   StatusPesanan,
 } from "@/types";
 
@@ -163,13 +171,9 @@ export default function PesananPage() {
 
 function PesananContent() {
   const { currentUser, isLoading: isLoadingUser } = useAuth();
-
-  const [pesananList, setPesananList] = React.useState<Pesanan[]>([]);
-  const [lokasiList, setLokasiList] = React.useState<Lokasi[]>([]);
-
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
-  const [totalPesanan, setTotalPesanan] = React.useState(0);
+  const queryClient = useQueryClient();
+  const pagination = usePagination();
+  const { page, lastPage } = pagination;
 
   const [filterStatus, setFilterStatus] = React.useState<
     StatusPesanan | "semua"
@@ -180,9 +184,7 @@ function PesananContent() {
   >("semua");
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-  const [updatingId, setUpdatingId] = React.useState<number | null>(null);
+  const [listError, setListError] = React.useState<string | null>(null);
 
   const [selectedPesanan, setSelectedPesanan] = React.useState<Pesanan | null>(
     null,
@@ -195,91 +197,144 @@ function PesananContent() {
     }
   }, [currentUser]);
 
+  const lokasiQuery = useQuery({
+    queryKey: queryKeys.lokasi.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listLokasi({ page: 1 });
+      return response.data;
+    },
+    enabled: !isLoadingUser && currentUser?.role === "superAdmin",
+  });
+
+  const lokasiList = lokasiQuery.data ?? [];
+
+  const filterParams: PesananFilterParams = { page };
+  if (filterStatus !== "semua") filterParams.status = filterStatus;
+  if (currentUser?.role === "superAdmin" && filterLokasi !== null)
+    filterParams.lokasi_id = filterLokasi;
+  if (filterMetode !== "semua") filterParams.metode = filterMetode;
+  if (searchQuery) filterParams.search = searchQuery;
+
+  const pesananQuery = useQuery({
+    queryKey: queryKeys.adminPesanan.list(filterParams),
+    queryFn: async () => {
+      const response = await listAdminPesanan(filterParams);
+      return response;
+    },
+    enabled: !isLoadingUser && currentUser !== null,
+  });
+
   React.useEffect(() => {
-    if (!currentUser || currentUser.role !== "superAdmin") return;
-    let isCurrent = true;
-    void listLokasi({ page: 1 })
-      .then((res) => {
-        if (isCurrent) setLokasiList(res.data);
-      })
-      .catch(() => undefined);
-    return () => {
-      isCurrent = false;
-    };
-  }, [currentUser]);
-
-  const loadPesanan = React.useCallback(async () => {
-    if (isLoadingUser || !currentUser) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const params: PesananFilterParams = { page };
-      if (filterStatus !== "semua") params.status = filterStatus;
-      if (currentUser.role === "superAdmin" && filterLokasi !== null)
-        params.lokasi_id = filterLokasi;
-      if (filterMetode !== "semua") params.metode = filterMetode;
-      if (searchQuery) params.search = searchQuery;
-
-      const res = await listAdminPesanan(params);
-      setPesananList(res.data);
-      setLastPage(res.meta?.last_page ?? 1);
-      setTotalPesanan(res.meta?.total ?? res.data.length);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
+    if (pesananQuery.data) {
+      pagination.setMeta(pesananQuery.data.meta);
     }
-  }, [
-    isLoadingUser,
-    currentUser,
-    page,
-    filterStatus,
-    filterLokasi,
-    filterMetode,
-    searchQuery,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pesananQuery.data]);
 
-  React.useEffect(() => {
-    void loadPesanan();
-  }, [loadPesanan]);
+  const pesananList = pesananQuery.data?.data ?? [];
+  const totalPesanan = pesananQuery.data?.meta?.total ?? 0;
+  const isLoading = pesananQuery.isLoading;
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({
+      pesananId,
+      newStatus,
+    }: {
+      pesananId: number;
+      newStatus: StatusPesanan;
+    }) => {
+      const response = await updateAdminPesananStatus(pesananId, newStatus);
+      return response.data;
+    },
+    onSuccess: async (updatedPesanan) => {
+      // Perbarui cache daftar dan detail agar konsisten tanpa memuat ulang.
+      queryClient.setQueryData(
+        queryKeys.adminPesanan.list(filterParams),
+        (current: ResponsApiPaginated<Pesanan> | undefined) =>
+          current
+            ? {
+                ...current,
+                data: current.data.map((p) =>
+                  p.id === updatedPesanan.id ? updatedPesanan : p,
+                ),
+              }
+            : current,
+      );
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.adminPesanan.all,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+      if (selectedPesanan?.id === updatedPesanan.id) {
+        setSelectedPesanan(updatedPesanan);
+      }
+
+      toast.add({
+        title: "Status Pesanan Diperbarui",
+        description: `Pesanan #${updatedPesanan.nomor_order} berhasil diubah menjadi ${getStatusLabel(updatedPesanan.status)}.`,
+        type: "success",
+      });
+    },
+    onError: (updateError: Error) => {
+      setListError(updateError.message);
+      toast.add({
+        title: "Gagal Mengubah Status",
+        description: updateError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const updatingId = updateStatusMutation.isPending
+    ? (updateStatusMutation.variables?.pesananId ?? null)
+    : null;
 
   const handleResetFilter = () => {
     setFilterStatus("semua");
     setFilterMetode("semua");
     setSearchQuery("");
     if (currentUser?.role === "superAdmin") setFilterLokasi(null);
-    setPage(1);
+    pagination.reset();
   };
 
-  const handleUpdateStatus = async (
+  const handlePembayaranChange = React.useCallback(
+    ({
+      id,
+      status,
+    }: {
+      id: number;
+      status: StatusPembayaran;
+    }): void => {
+      queryClient.setQueryData(
+        queryKeys.adminPesanan.list(filterParams),
+        (current: ResponsApiPaginated<Pesanan> | undefined) =>
+          current
+            ? {
+                ...current,
+                data: current.data.map((item) =>
+                  item.pembayaran?.id === id
+                    ? { ...item, pembayaran: { ...item.pembayaran, status } }
+                    : item,
+                ),
+              }
+            : current,
+      );
+      if (selectedPesanan?.pembayaran?.id === id) {
+        setSelectedPesanan((prev) =>
+          prev && prev.pembayaran
+            ? { ...prev, pembayaran: { ...prev.pembayaran, status } }
+            : prev,
+        );
+      }
+    },
+    [selectedPesanan, queryClient, filterParams],
+  );
+
+  const handleUpdateStatus = (
     pesananId: number,
     newStatus: StatusPesanan,
   ) => {
-    setUpdatingId(pesananId);
-    try {
-      const res = await updateAdminPesananStatus(pesananId, newStatus);
-      setPesananList((prev) =>
-        prev.map((p) => (p.id === pesananId ? res.data : p)),
-      );
-      if (selectedPesanan?.id === pesananId) {
-        setSelectedPesanan(res.data);
-      }
-      toast.add({
-        title: "Status Pesanan Diperbarui",
-        description: `Pesanan #${res.data.nomor_order} berhasil diubah menjadi ${getStatusLabel(newStatus)}.`,
-        type: "success",
-      });
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.add({
-        title: "Gagal Mengubah Status",
-        description: msg,
-        type: "error",
-      });
-    } finally {
-      setUpdatingId(null);
-    }
+    void updateStatusMutation.mutateAsync({ pesananId, newStatus });
   };
 
   const isSuperAdmin = currentUser?.role === "superAdmin";
@@ -339,7 +394,7 @@ function PesananContent() {
                         value={filterLokasi ? String(filterLokasi) : "all"}
                         onValueChange={(val) => {
                           setFilterLokasi(val === "all" ? null : Number(val));
-                          setPage(1);
+                          pagination.reset();
                         }}
                       >
                         <SelectTrigger className="w-[220px] font-medium">
@@ -379,7 +434,7 @@ function PesananContent() {
                       value={searchQuery}
                       onChange={(e) => {
                         setSearchQuery(e.target.value);
-                        setPage(1);
+                        pagination.reset();
                       }}
                       className="h-8 w-44 text-xs"
                     />
@@ -389,7 +444,7 @@ function PesananContent() {
                       value={filterStatus}
                       onValueChange={(val) => {
                         setFilterStatus(val as StatusPesanan | "semua");
-                        setPage(1);
+                        pagination.reset();
                       }}
                     >
                       <SelectTrigger className="h-8 w-36 text-xs">
@@ -409,7 +464,7 @@ function PesananContent() {
                       value={filterMetode}
                       onValueChange={(val) => {
                         setFilterMetode(val as MetodePesanan | "semua");
-                        setPage(1);
+                        pagination.reset();
                       }}
                     >
                       <SelectTrigger className="h-8 w-36 text-xs">
@@ -440,14 +495,17 @@ function PesananContent() {
               </div>
 
               {/* Error */}
-              {error ? (
+              {(listError || pesananQuery.error) ? (
                 <div className="px-4 lg:px-6">
                   <Alert variant="destructive">
                     <AlertTitle>Data pesanan gagal dimuat</AlertTitle>
                     <AlertDescription className="flex flex-wrap items-center gap-3">
-                      {error}
+                      {listError ??
+                        (pesananQuery.error instanceof Error
+                          ? pesananQuery.error.message
+                          : null)}
                       <Button
-                        onClick={() => void loadPesanan()}
+                        onClick={() => void pesananQuery.refetch()}
                         size="sm"
                         variant="outline"
                       >
@@ -529,7 +587,6 @@ function PesananContent() {
                           </TableHeader>
                           <TableBody>
                             {pesananList.map((pesanan) => {
-                              const nextStatus = getNextStatus(pesanan.status);
                               return (
                                 <TableRow key={pesanan.id}>
                                   <TableCell className="font-mono text-xs font-semibold text-primary">
@@ -605,27 +662,6 @@ function PesananContent() {
                                         <Eye className="size-3.5" />
                                         Detail
                                       </Button>
-                                      {nextStatus &&
-                                        pesanan.status !== "dibatalkan" && (
-                                          <Button
-                                            onClick={() =>
-                                              void handleUpdateStatus(
-                                                pesanan.id,
-                                                nextStatus,
-                                              )
-                                            }
-                                            disabled={
-                                              updatingId === pesanan.id
-                                            }
-                                            size="sm"
-                                            variant="outline"
-                                            className="h-8 text-xs"
-                                          >
-                                            {updatingId === pesanan.id
-                                              ? "..."
-                                              : `→ ${getStatusLabel(nextStatus)}`}
-                                          </Button>
-                                        )}
                                     </div>
                                   </TableCell>
                                 </TableRow>
@@ -643,10 +679,8 @@ function PesananContent() {
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
-                          disabled={page <= 1 || isLoading}
-                          onClick={() =>
-                            setPage((prev) => Math.max(1, prev - 1))
-                          }
+                          disabled={!pagination.canGoPrevious || isLoading}
+                          onClick={pagination.goToPreviousPage}
                           size="sm"
                           variant="outline"
                         >
@@ -654,10 +688,8 @@ function PesananContent() {
                           Sebelumnya
                         </Button>
                         <Button
-                          disabled={page >= lastPage || isLoading}
-                          onClick={() =>
-                            setPage((prev) => Math.min(lastPage, prev + 1))
-                          }
+                          disabled={!pagination.canGoNext || isLoading}
+                          onClick={pagination.goToNextPage}
                           size="sm"
                           variant="outline"
                         >
@@ -903,22 +935,17 @@ function PesananContent() {
                               {selectedPesanan.pembayaran.metode_pembayaran}
                             </span>
                           </div>
-                          <div className="flex justify-between">
+                          <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
                               Status Bayar
                             </span>
-                            <Badge
-                              variant={
-                                selectedPesanan.pembayaran.status === "berhasil"
-                                  ? "default"
-                                  : selectedPesanan.pembayaran.status === "gagal"
-                                    ? "destructive"
-                                    : "outline"
+                            <StatusBayarSelect
+                              pembayaranId={
+                                selectedPesanan.pembayaran.id
                               }
-                              className="text-[10px]"
-                            >
-                              {selectedPesanan.pembayaran.status}
-                            </Badge>
+                              status={selectedPesanan.pembayaran.status}
+                              onChange={handlePembayaranChange}
+                            />
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">

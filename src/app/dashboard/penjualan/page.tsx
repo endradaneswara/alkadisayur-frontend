@@ -60,6 +60,9 @@ import {
 } from "@/components/ui/table";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
 import { useAuth } from "@/hooks/useAuth";
+import { usePagination } from "@/hooks/usePagination";
+import { useQuery } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 import { getDashboard } from "@/services/dashboardService";
 import { listLokasi } from "@/services/lokasiService";
 import {
@@ -69,11 +72,8 @@ import {
   listPenjualanSuperAdmin,
 } from "@/services/penjualanService";
 import type {
-  Dashboard,
-  Lokasi,
   Penjualan,
   RentangGrafik,
-  RingkasanPenjualan,
 } from "@/types";
 
 export default function PenjualanPage() {
@@ -90,26 +90,15 @@ export default function PenjualanPage() {
 function PenjualanContent() {
   const { currentUser, isLoading: isLoadingUser } = useAuth();
 
-  const [dashboard, setDashboard] = React.useState<Dashboard | null>(null);
-  const [ringkasan, setRingkasan] = React.useState<RingkasanPenjualan | null>(
-    null,
-  );
-  const [penjualanList, setPenjualanList] = React.useState<Penjualan[]>([]);
-  const [lokasiList, setLokasiList] = React.useState<Lokasi[]>([]);
-
   const [selectedLokasiId, setSelectedLokasiId] = React.useState<number | null>(
     null,
   );
   const [rentang, setRentang] = React.useState<RentangGrafik>("7h");
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
+  const pagination = usePagination();
+  const { page } = pagination;
 
   const [tanggalMulai, setTanggalMulai] = React.useState("");
   const [tanggalSelesai, setTanggalSelesai] = React.useState("");
-
-  const [isLoadingDashboard, setIsLoadingDashboard] = React.useState(true);
-  const [isLoadingTable, setIsLoadingTable] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
 
   const [selectedPenjualan, setSelectedPenjualan] =
     React.useState<Penjualan | null>(null);
@@ -122,83 +111,79 @@ function PenjualanContent() {
     setSelectedLokasiId(currentUser.lokasi_id);
   }, [isAdmin, currentUser]);
 
-  React.useEffect(() => {
-    if (!isSuperAdmin) return;
-    let isCurrent = true;
+  const lokasiQuery = useQuery({
+    queryKey: queryKeys.lokasi.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listLokasi({ page: 1 });
+      return response.data;
+    },
+    enabled: !isLoadingUser && isSuperAdmin,
+  });
 
-    void listLokasi({ page: 1 })
-      .then((res) => {
-        if (isCurrent) {
-          setLokasiList(res.data);
-        }
-      })
-      .catch(() => {
-        // Silently continue if cabang list fails to load
-      });
+  const lokasiList = lokasiQuery.data ?? [];
 
-    return () => {
-      isCurrent = false;
-    };
-  }, [isSuperAdmin]);
+  const filterParams = {
+    page,
+    lokasi_id: isSuperAdmin ? selectedLokasiId : undefined,
+    tanggal_mulai: tanggalMulai || undefined,
+    tanggal_selesai: tanggalSelesai || undefined,
+  };
 
-  const loadData = React.useCallback(async () => {
-    if (isLoadingUser || !currentUser) return;
-
-    setIsLoadingDashboard(true);
-    setIsLoadingTable(true);
-    setError(null);
-
-    const filterParams = {
-      page,
-      lokasi_id: isSuperAdmin ? selectedLokasiId : undefined,
-      tanggal_mulai: tanggalMulai || undefined,
-      tanggal_selesai: tanggalSelesai || undefined,
-    };
-
-    try {
-      const dashboardPromise = getDashboard(
+  const dashboardQuery = useQuery({
+    queryKey: queryKeys.dashboard(rentang, isSuperAdmin ? selectedLokasiId : null),
+    queryFn: async () => {
+      const response = await getDashboard(
         rentang,
         isSuperAdmin ? selectedLokasiId : undefined,
       );
+      return response.data;
+    },
+    enabled: !isLoadingUser && currentUser !== null,
+  });
 
-      const summaryPromise = isSuperAdmin
-        ? getRingkasanPenjualanSuperAdmin(filterParams)
-        : getRingkasanPenjualanAdmin(filterParams);
+  const summaryQuery = useQuery({
+    queryKey: isSuperAdmin
+      ? queryKeys.penjualan.superAdminSummary(filterParams)
+      : queryKeys.penjualan.adminSummary(filterParams),
+    queryFn: async () => {
+      const response = isSuperAdmin
+        ? await getRingkasanPenjualanSuperAdmin(filterParams)
+        : await getRingkasanPenjualanAdmin(filterParams);
+      return response.data;
+    },
+    enabled: !isLoadingUser && currentUser !== null,
+  });
 
-      const listPromise = isSuperAdmin
-        ? listPenjualanSuperAdmin(filterParams)
-        : listPenjualanAdmin(filterParams);
-
-      const [dashRes, sumRes, listRes] = await Promise.all([
-        dashboardPromise,
-        summaryPromise,
-        listPromise,
-      ]);
-
-      setDashboard(dashRes.data);
-      setRingkasan(sumRes.data);
-      setPenjualanList(listRes.data);
-      setLastPage(listRes.meta?.last_page || 1);
-    } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setIsLoadingDashboard(false);
-      setIsLoadingTable(false);
-    }
-  }, [
-    isLoadingUser,
-    currentUser,
-    isSuperAdmin,
-    selectedLokasiId,
-    rentang,
-    page,
-    tanggalMulai,
-    tanggalSelesai,
-  ]);
+  const listQuery = useQuery({
+    queryKey: isSuperAdmin
+      ? queryKeys.penjualan.superAdminList(filterParams)
+      : queryKeys.penjualan.adminList(filterParams),
+    queryFn: async () => {
+      const response = isSuperAdmin
+        ? await listPenjualanSuperAdmin(filterParams)
+        : await listPenjualanAdmin(filterParams);
+      return response;
+    },
+    enabled: !isLoadingUser && currentUser !== null,
+  });
 
   React.useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    if (listQuery.data) {
+      pagination.setMeta(listQuery.data.meta);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listQuery.data]);
+
+  const dashboard = dashboardQuery.data ?? null;
+  const ringkasan = summaryQuery.data ?? null;
+  const penjualanList = listQuery.data?.data ?? [];
+  const lastPage = pagination.lastPage;
+
+  const isLoadingDashboard = dashboardQuery.isLoading;
+  const isLoadingTable = listQuery.isLoading;
+  const error = [dashboardQuery.error, summaryQuery.error, listQuery.error].find(
+    (queryError): queryError is Error => queryError instanceof Error,
+  );
 
   const handleResetFilter = () => {
     setTanggalMulai("");
@@ -206,7 +191,7 @@ function PenjualanContent() {
     if (isSuperAdmin) {
       setSelectedLokasiId(null);
     }
-    setPage(1);
+    pagination.reset();
   };
 
   const totalPendapatan = Number(
@@ -310,7 +295,7 @@ function PenjualanContent() {
                             setSelectedLokasiId(
                               val === "all" ? null : Number(val),
                             );
-                            setPage(1);
+                            pagination.reset();
                           }}
                         >
                           <SelectTrigger className="w-[230px] font-medium">
@@ -354,7 +339,7 @@ function PenjualanContent() {
                         value={tanggalMulai}
                         onChange={(e) => {
                           setTanggalMulai(e.target.value);
-                          setPage(1);
+                          pagination.reset();
                         }}
                         className="h-8 w-36 text-xs"
                       />
@@ -366,7 +351,7 @@ function PenjualanContent() {
                         value={tanggalSelesai}
                         onChange={(e) => {
                           setTanggalSelesai(e.target.value);
-                          setPage(1);
+                          pagination.reset();
                         }}
                         className="h-8 w-36 text-xs"
                       />
@@ -395,9 +380,13 @@ function PenjualanContent() {
                   <Alert variant="destructive">
                     <AlertTitle>Data penjualan gagal dimuat</AlertTitle>
                     <AlertDescription className="flex flex-wrap items-center gap-3">
-                      {error}
+                      {error.message}
                       <Button
-                        onClick={() => void loadData()}
+                        onClick={() => {
+                          void dashboardQuery.refetch();
+                          void summaryQuery.refetch();
+                          void listQuery.refetch();
+                        }}
                         size="sm"
                         variant="outline"
                       >
@@ -478,7 +467,7 @@ function PenjualanContent() {
                           <Button
                             onClick={() => {
                               setSelectedLokasiId(null);
-                              setPage(1);
+                              pagination.reset();
                             }}
                             size="sm"
                             variant="outline"
@@ -527,7 +516,7 @@ function PenjualanContent() {
                                 <Button
                                   onClick={() => {
                                     setSelectedLokasiId(cabang.id);
-                                    setPage(1);
+                                    pagination.reset();
                                   }}
                                   size="sm"
                                   variant={isSelected ? "secondary" : "outline"}
@@ -683,8 +672,8 @@ function PenjualanContent() {
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
-                          disabled={page <= 1 || isLoadingTable}
-                          onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                          disabled={!pagination.canGoPrevious || isLoadingTable}
+                          onClick={pagination.goToPreviousPage}
                           size="sm"
                           variant="outline"
                         >
@@ -692,10 +681,8 @@ function PenjualanContent() {
                           Sebelumnya
                         </Button>
                         <Button
-                          disabled={page >= lastPage || isLoadingTable}
-                          onClick={() =>
-                            setPage((prev) => Math.min(lastPage, prev + 1))
-                          }
+                          disabled={!pagination.canGoNext || isLoadingTable}
+                          onClick={pagination.goToNextPage}
                           size="sm"
                           variant="outline"
                         >

@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -25,11 +26,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
 import { StoreShowcase } from "@/components/store-showcase";
+import { useCart } from "@/hooks/useCart";
+import { queryKeys } from "@/lib/query-keys";
 import { API_BASE_URL, hasAuthSession } from "@/services/api";
-import { addItemKeranjang } from "@/services/keranjangService";
 import { listBarang } from "@/services/barangService";
 import { listKategori } from "@/services/kategoriService";
-import type { BarangCustomer, Kategori } from "@/types";
+import type { BarangCustomer } from "@/types";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error
@@ -64,59 +66,40 @@ function formatRupiah(value: string | number): string {
 
 export default function StoreLandingPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<Kategori[]>([]);
-  const [products, setProducts] = useState<BarangCustomer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
-  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
-  const [categoryError, setCategoryError] = useState<string | null>(null);
-  const [productError, setProductError] = useState<string | null>(null);
   const [addingProductIds, setAddingProductIds] = useState<number[]>([]);
   const [failedImageIds, setFailedImageIds] = useState<number[]>([]);
   const [cartCount, setCartCount] = useState(0);
   const [cartFeedback, setCartFeedback] = useState<string | null>(null);
   const [cartFeedbackIsError, setCartFeedbackIsError] = useState(false);
-  useEffect(() => {
-    let isCurrent = true;
 
-    void listKategori({ page: 1 })
-      .then((response) => {
-        if (isCurrent) {
-          setCategories(response.data);
-        }
-      })
-      .catch((error: unknown) => {
-        if (isCurrent) {
-          setCategoryError(getErrorMessage(error));
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoadingCategories(false);
-        }
-      });
+  const { addItem } = useCart();
 
-    void listBarang({ page: 1 })
-      .then((response) => {
-        if (isCurrent) {
-          setProducts(response.data);
-        }
-      })
-      .catch((error: unknown) => {
-        if (isCurrent) {
-          setProductError(getErrorMessage(error));
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoadingProducts(false);
-        }
-      });
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.kategori.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listKategori({ page: 1 });
+      return response.data;
+    },
+  });
 
-    return () => {
-      isCurrent = false;
-    };
-  }, []);
+  const productsQuery = useQuery({
+    queryKey: queryKeys.barang.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listBarang<BarangCustomer>({ page: 1 });
+      return response.data;
+    },
+  });
+
+  const categories = categoriesQuery.data ?? [];
+  const products = productsQuery.data ?? [];
+  const isLoadingCategories = categoriesQuery.isLoading;
+  const categoryError = categoriesQuery.error instanceof Error
+    ? getErrorMessage(categoriesQuery.error)
+    : null;
+  const productError = productsQuery.error instanceof Error
+    ? getErrorMessage(productsQuery.error)
+    : null;
 
   const availableProducts = products.filter(
     (product) => product.Status === "tersedia",
@@ -146,18 +129,19 @@ export default function StoreLandingPage() {
     setCartFeedback(null);
     setCartFeedbackIsError(false);
 
-    try {
-      const response = await addItemKeranjang(product.id, 1);
-      setCartCount(response.data.total_item);
+    const result = await addItem(product.id, 1);
+
+    if (result) {
+      setCartCount(result.total_item);
       setCartFeedback(`${product.NamaItem} berhasil ditambahkan ke keranjang.`);
-    } catch (error: unknown) {
-      setCartFeedback(getErrorMessage(error));
+    } else {
+      setCartFeedback("Gagal menambahkan produk ke keranjang.");
       setCartFeedbackIsError(true);
-    } finally {
-      setAddingProductIds((current) =>
-        current.filter((productId) => productId !== product.id),
-      );
     }
+
+    setAddingProductIds((current) =>
+      current.filter((productId) => productId !== product.id),
+    );
   }
 
   function selectCategory(categoryId: number | null): void {

@@ -8,8 +8,8 @@ import { ImagePlus, Package, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useCart } from "@/hooks/useCart";
 import { hasAuthSession } from "@/services/api";
-import { addItemKeranjang } from "@/services/keranjangService";
 import { getErrorMessage, getProductImageUrl, formatRupiah } from "@/lib/store-catalog";
 import type { BarangCustomer } from "@/types";
 
@@ -20,10 +20,10 @@ function formatCategory(name?: string | null): string {
 
 export function StoreProductCard({ product }: { product: BarangCustomer }) {
   const router = useRouter();
-  const [isAdding, setIsAdding] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackIsError, setFeedbackIsError] = useState(false);
+  const { addItem, isAdding } = useCart();
   const isAvailable = product.Status === "tersedia";
 
   async function handleAddToCart(): Promise<void> {
@@ -32,18 +32,16 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
       return;
     }
 
-    setIsAdding(true);
     setFeedback(null);
     setFeedbackIsError(false);
 
-    try {
-      await addItemKeranjang(product.id, 1);
+    const result = await addItem(product.id, 1);
+
+    if (result) {
       setFeedback(`${product.NamaItem} berhasil ditambahkan ke keranjang.`);
-    } catch (error: unknown) {
-      setFeedback(getErrorMessage(error));
+    } else {
+      setFeedback("Gagal menambahkan produk ke keranjang.");
       setFeedbackIsError(true);
-    } finally {
-      setIsAdding(false);
     }
   }
 

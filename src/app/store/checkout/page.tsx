@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MapPin, PackageCheck } from "lucide-react";
 
 import { StorePageShell } from "@/components/store-page-shell";
@@ -26,6 +27,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
+import { queryKeys } from "@/lib/query-keys";
 import { hasAuthSession } from "@/services/api";
 import { listAlamat } from "@/services/alamatService";
 import { getKeranjang } from "@/services/keranjangService";
@@ -33,62 +35,122 @@ import { listLokasi } from "@/services/lokasiService";
 import { createPembayaran } from "@/services/pembayaranService";
 import { createPesanan } from "@/services/pesananService";
 import type {
-  Alamat,
-  Keranjang,
-  Lokasi,
   MetodePembayaran,
   MetodePesanan,
 } from "@/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [cart, setCart] = useState<Keranjang | null>(null);
-  const [addresses, setAddresses] = useState<Alamat[]>([]);
-  const [locations, setLocations] = useState<Lokasi[]>([]);
   const [method, setMethod] = useState<MetodePesanan>("pesan_antar");
   const [addressId, setAddressId] = useState("");
   const [locationId, setLocationId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<MetodePembayaran>("COD");
   const [notes, setNotes] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!hasAuthSession()) {
       router.replace("/store/akun/login");
-      return;
     }
+  }, [router]);
 
-    let isCurrent = true;
-    void Promise.all([getKeranjang(), listAlamat({ page: 1 }), listLokasi({ page: 1 })])
-      .then(([cartResponse, addressResponse, locationResponse]) => {
-        if (!isCurrent) {
-          return;
-        }
+  const cartQuery = useQuery({
+    queryKey: queryKeys.keranjang,
+    queryFn: async () => {
+      const response = await getKeranjang();
+      return response.data;
+    },
+    enabled: hasAuthSession(),
+  });
 
-        setCart(cartResponse.data);
-        setAddresses(addressResponse.data);
-        setLocations(locationResponse.data);
-        setAddressId(addressResponse.data[0] ? String(addressResponse.data[0].id) : "");
-        setLocationId(locationResponse.data[0] ? String(locationResponse.data[0].id) : "");
-      })
-      .catch((loadError: unknown) => {
-        if (isCurrent) {
-          setError(getErrorMessage(loadError));
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
+  const addressesQuery = useQuery({
+    queryKey: queryKeys.alamat.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listAlamat({ page: 1 });
+      return response.data;
+    },
+    enabled: hasAuthSession(),
+  });
+
+  const locationsQuery = useQuery({
+    queryKey: queryKeys.lokasi.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listLokasi({ page: 1 });
+      return response.data;
+    },
+  });
+
+  const cart = cartQuery.data ?? null;
+  const addresses = addressesQuery.data ?? [];
+  const locations = locationsQuery.data ?? [];
+
+  // Set default alamat/lokasi sekali saat data pertama tersedia.
+  useEffect(() => {
+    if (!addressId && addresses.length > 0) {
+      setAddressId(String(addresses[0].id));
+    }
+  }, [addressId, addresses]);
+
+  useEffect(() => {
+    if (!locationId && locations.length > 0) {
+      setLocationId(String(locations[0].id));
+    }
+  }, [locationId, locations]);
+
+  const isLoading = cartQuery.isLoading || addressesQuery.isLoading || locationsQuery.isLoading;
+  const loadError = [cartQuery.error, addressesQuery.error, locationsQuery.error].find(
+    (queryError): queryError is Error => queryError instanceof Error,
+  );
+
+  const submitMutation = useMutation({
+    mutationFn: async () => {
+      const orderResponse = await createPesanan({
+        metode: method,
+        lokasi_toko_id: Number(locationId),
+        alamat_id: method === "pesan_antar" ? Number(addressId) : null,
+        catatan: notes.trim() || null,
       });
 
-    return () => {
-      isCurrent = false;
-    };
-  }, [router]);
+      try {
+        await createPembayaran({
+          pesanan_id: orderResponse.data.id,
+          metode_pembayaran: paymentMethod,
+        });
+      } catch (paymentError: unknown) {
+        throw new Error(
+          `Pesanan berhasil dibuat, tetapi pencatatan pembayaran gagal: ${getErrorMessage(paymentError)}`,
+        );
+      }
+
+      return orderResponse.data;
+    },
+    onSuccess: async (order) => {
+      setCreatedOrderId(order.id);
+      toast.add({
+        title: "Pesanan berhasil dibuat",
+        description: "Detail dan status pesanan dapat dilihat pada halaman pesanan.",
+        type: "success",
+      });
+      // Keranjang berubah di server setelah pesanan dibuat.
+      await queryClient.invalidateQueries({ queryKey: queryKeys.keranjang });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pesanan.all });
+      router.push(`/store/pesanan/${order.id}`);
+    },
+    onError: (submitError: Error) => {
+      setError(submitError.message);
+      toast.add({
+        title: submitError.message.startsWith("Pesanan berhasil dibuat")
+          ? "Pesanan dibuat, pembayaran belum tercatat"
+          : "Checkout gagal",
+        description: submitError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const isSubmitting = submitMutation.isPending;
 
   const selectedLocation = locations.find(
     (location) => String(location.id) === locationId,
@@ -97,7 +159,7 @@ export default function CheckoutPage() {
     method === "pesan_antar" ? Number(selectedLocation?.biaya_pengiriman ?? 0) : 0;
   const total = Number(cart?.total_harga ?? 0) + deliveryFee;
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault();
     setError(null);
 
@@ -114,49 +176,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const orderResponse = await createPesanan({
-        metode: method,
-        lokasi_toko_id: Number(locationId),
-        alamat_id: method === "pesan_antar" ? Number(addressId) : null,
-        catatan: notes.trim() || null,
-      });
-      setCreatedOrderId(orderResponse.data.id);
-
-      try {
-        await createPembayaran({
-          pesanan_id: orderResponse.data.id,
-          metode_pembayaran: paymentMethod,
-        });
-      } catch (paymentError: unknown) {
-        const message = `Pesanan berhasil dibuat, tetapi pencatatan pembayaran gagal: ${getErrorMessage(paymentError)}`;
-        setError(message);
-        toast.add({
-          title: "Pesanan dibuat, pembayaran belum tercatat",
-          description: getErrorMessage(paymentError),
-          type: "error",
-        });
-        return;
-      }
-
-      toast.add({
-        title: "Pesanan berhasil dibuat",
-        description: "Detail dan status pesanan dapat dilihat pada halaman pesanan.",
-        type: "success",
-      });
-      router.push(`/store/pesanan/${orderResponse.data.id}`);
-    } catch (submitError: unknown) {
-      const message = getErrorMessage(submitError);
-      setError(message);
-      toast.add({
-        title: "Checkout gagal",
-        description: message,
-        type: "error",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    void submitMutation.mutateAsync();
   }
 
   if (createdOrderId !== null) {

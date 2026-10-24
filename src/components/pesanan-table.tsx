@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -20,10 +21,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { toast } from "@/components/ui/toast";
+import { usePagination } from "@/hooks/usePagination";
+import { queryKeys } from "@/lib/query-keys";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
 import { listAdminPesanan } from "@/services/pesananService";
-import type { Pesanan, StatusPesanan } from "@/types";
-
+import { updateStatusPembayaran } from "@/services/pembayaranService";
+import type {
+  StatusPembayaran,
+  StatusPesanan,
+} from "@/types";
 const statusLabels: Record<StatusPesanan, string> = {
   pending: "Pending",
   diproses: "Diproses",
@@ -43,37 +56,124 @@ const statusVariants: Record<
   dibatalkan: "destructive",
 };
 
-export function PesananTable() {
-  const [pesanan, setPesanan] = React.useState<Pesanan[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
+const STATUS_BAYAR_OPTIONS: StatusPembayaran[] = [
+  "pending",
+  "berhasil",
+  "gagal",
+  "expired",
+];
 
-  const loadPesanan = React.useCallback(async (): Promise<void> => {
-    setIsLoading(true);
+const statusBayarLabels: Record<StatusPembayaran, string> = {
+  pending: "Menunggu",
+  berhasil: "Berhasil",
+  gagal: "Gagal",
+  expired: "Kedaluwarsa",
+};
+
+const statusBayarVariants: Record<
+  StatusPembayaran,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  pending: "outline",
+  berhasil: "default",
+  gagal: "destructive",
+  expired: "secondary",
+};
+
+export function StatusBayarSelect({
+  pembayaranId,
+  status,
+  onChange,
+  disabled = false,
+}: {
+  pembayaranId: number;
+  status: StatusPembayaran;
+  onChange: (updated: { id: number; status: StatusPembayaran }) => void;
+  disabled?: boolean;
+}) {
+  const [isUpdating, setIsUpdating] = React.useState(false);
+
+  const handleValueChange = async (value: StatusPembayaran | string): Promise<void> => {
+    const newStatus = value as StatusPembayaran;
+    if (newStatus === status || isUpdating) return;
+
+    setIsUpdating(true);
     try {
-      const response = await listAdminPesanan({ page });
-      setPesanan(response.data);
-      setLastPage(response.meta.last_page);
-      setError(null);
-    } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError));
+      const res = await updateStatusPembayaran(pembayaranId, newStatus);
+      onChange({ id: res.data.id, status: res.data.status });
+      toast.add({
+        title: "Status Pembayaran Diperbarui",
+        description: `Status pembayaran berhasil diubah menjadi ${statusBayarLabels[res.data.status]}.`,
+        type: "success",
+      });
+    } catch (err: unknown) {
+      const msg = getErrorMessage(err);
+      toast.add({
+        title: "Gagal Mengubah Status Pembayaran",
+        description: msg,
+        type: "error",
+      });
     } finally {
-      setIsLoading(false);
+      setIsUpdating(false);
     }
-  }, [page]);
+  };
+
+  return (
+    <Select
+      value={status}
+      onValueChange={(value) => {
+        if (typeof value === "string") void handleValueChange(value);
+      }}
+      disabled={disabled || isUpdating}
+    >
+      <SelectTrigger className="h-7 w-[130px] text-xs" aria-label="Status Bayar">
+        <span className="flex items-center gap-1.5">
+          <Badge variant={statusBayarVariants[status]} className="text-[10px]">
+            {statusBayarLabels[status]}
+          </Badge>
+        </span>
+      </SelectTrigger>
+      <SelectContent>
+        {STATUS_BAYAR_OPTIONS.map((option) => (
+          <SelectItem key={option} value={option}>
+            {statusBayarLabels[option]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export function PesananTable() {
+  const pagination = usePagination();
+
+  const pesananQuery = useQuery({
+    queryKey: queryKeys.adminPesanan.list({ page: pagination.page }),
+    queryFn: async () => {
+      const response = await listAdminPesanan({ page: pagination.page });
+      return response;
+    },
+  });
 
   React.useEffect(() => {
-    void Promise.resolve().then(() => loadPesanan());
-  }, [loadPesanan]);
+    if (pesananQuery.data) {
+      pagination.setMeta(pesananQuery.data.meta);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pesananQuery.data]);
+
+  const pesanan = pesananQuery.data?.data ?? [];
+  const isLoading = pesananQuery.isLoading;
+  const error = pesananQuery.error instanceof Error
+    ? getErrorMessage(pesananQuery.error)
+    : null;
 
   return (
     <Card className="mx-4 mb-6 lg:mx-6">
       <CardHeader>
         <CardTitle>Daftar Pesanan</CardTitle>
         <CardDescription>
-          Pesanan terbaru yang masuk, halaman {page} dari {lastPage}
+          Pesanan terbaru yang masuk, halaman {pagination.page} dari {pagination.lastPage}
         </CardDescription>
       </CardHeader>
       {error ? (
@@ -84,7 +184,7 @@ export function PesananTable() {
           Pesanan belum dapat dimuat: {error}
           <Button
             className="ml-3"
-            onClick={() => void loadPesanan()}
+            onClick={() => void pesananQuery.refetch()}
             size="sm"
             variant="outline"
           >
@@ -149,14 +249,14 @@ export function PesananTable() {
               </TableBody>
             </Table>
           </div>
-          {lastPage > 1 ? (
+          {pagination.lastPage > 1 ? (
             <nav
               aria-label="Navigasi halaman pesanan"
               className="flex items-center justify-between px-6 py-4"
             >
               <Button
-                disabled={page <= 1}
-                onClick={() => setPage((current) => current - 1)}
+                disabled={!pagination.canGoPrevious}
+                onClick={pagination.goToPreviousPage}
                 size="sm"
                 variant="outline"
               >
@@ -164,11 +264,11 @@ export function PesananTable() {
                 Sebelumnya
               </Button>
               <p className="text-sm text-muted-foreground">
-                Halaman {page} dari {lastPage}
+                Halaman {pagination.page} dari {pagination.lastPage}
               </p>
               <Button
-                disabled={page >= lastPage}
-                onClick={() => setPage((current) => current + 1)}
+                disabled={!pagination.canGoNext}
+                onClick={pagination.goToNextPage}
                 size="sm"
                 variant="outline"
               >

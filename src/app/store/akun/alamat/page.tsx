@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Building2,
   Check,
@@ -16,6 +17,7 @@ import {
   User,
 } from "lucide-react";
 
+import { ConfirmDialogHost } from "@/components/confirm-dialog";
 import { StoreAccountNav } from "@/components/store-account-nav";
 import { StorePageShell } from "@/components/store-page-shell";
 import { Button } from "@/components/ui/button";
@@ -28,7 +30,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import { getErrorMessage } from "@/lib/store-catalog";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { queryKeys } from "@/lib/query-keys";
 import { hasAuthSession } from "@/services/api";
 import {
   createAlamat,
@@ -48,34 +51,76 @@ const emptyForm: AlamatPayload = {
 
 export default function AddressesPage() {
   const router = useRouter();
-  const [addresses, setAddresses] = useState<Alamat[]>([]);
   const [formData, setFormData] = useState<AlamatPayload>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const loadAddresses = useCallback(async (): Promise<void> => {
-    try {
-      const response = await listAlamat({ page: 1 });
-      setAddresses(response.data);
-      setError(null);
-    } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!hasAuthSession()) {
-        router.replace("/store/akun/login");
-        return;
+    if (!hasAuthSession()) {
+      router.replace("/store/akun/login");
+    }
+  }, [router]);
+
+  const addressesQuery = useQuery({
+    queryKey: queryKeys.alamat.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listAlamat({ page: 1 });
+      return response.data;
+    },
+    enabled: hasAuthSession(),
+  });
+
+  const addresses = addressesQuery.data ?? [];
+  const isLoading = addressesQuery.isLoading;
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload: AlamatPayload) => {
+      if (editingId === null) {
+        return createAlamat(payload);
       }
-      return loadAddresses();
-    });
-  }, [loadAddresses, router]);
+      return updateAlamat(editingId, payload);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.alamat.all });
+      toast.add({
+        title: editingId === null ? "Alamat ditambahkan" : "Alamat diperbarui",
+        description: "Informasi alamat berhasil disimpan.",
+        type: "success",
+      });
+      resetForm();
+    },
+    onError: (saveError: Error) => {
+      setError(saveError.message);
+      toast.add({
+        title: "Alamat tidak dapat disimpan",
+        description: saveError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (addressId: number) => {
+      await deleteAlamat(addressId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.alamat.all });
+      toast.add({
+        title: "Alamat dihapus",
+        description: "Alamat berhasil dihapus dari akun Anda.",
+        type: "success",
+      });
+    },
+    onError: (deleteError: Error) => {
+      toast.add({
+        title: "Alamat tidak dapat dihapus",
+        description: deleteError.message,
+        type: "error",
+      });
+    },
+  });
 
   function startEdit(address: Alamat): void {
     setEditingId(address.id);
@@ -95,58 +140,26 @@ export default function AddressesPage() {
     setError(null);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    setIsSaving(true);
     setError(null);
-    try {
-      if (editingId === null) {
-        await createAlamat(formData);
-      } else {
-        await updateAlamat(editingId, formData);
-      }
-      await loadAddresses();
-      toast.add({
-        title: editingId === null ? "Alamat ditambahkan" : "Alamat diperbarui",
-        description: "Informasi alamat berhasil disimpan.",
-        type: "success",
-      });
-      resetForm();
-    } catch (saveError: unknown) {
-      const message = getErrorMessage(saveError);
-      setError(message);
-      toast.add({
-        title: "Alamat tidak dapat disimpan",
-        description: message,
-        type: "error",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    void saveMutation.mutateAsync(formData);
   }
 
-  async function handleDelete(address: Alamat): Promise<void> {
-    if (!window.confirm(`Hapus alamat "${address.nama_alamat}"?`)) {
-      return;
-    }
-    try {
-      await deleteAlamat(address.id);
-      await loadAddresses();
-      if (editingId === address.id) {
-        resetForm();
-      }
-      toast.add({
-        title: "Alamat dihapus",
-        description: "Alamat berhasil dihapus dari akun Anda.",
-        type: "success",
-      });
-    } catch (deleteError: unknown) {
-      toast.add({
-        title: "Alamat tidak dapat dihapus",
-        description: getErrorMessage(deleteError),
-        type: "error",
-      });
-    }
+  function handleDelete(address: Alamat): void {
+    void confirmDialog.confirm(
+      {
+        title: `Hapus alamat "${address.nama_alamat}"?`,
+        description: "Alamat akan dihapus secara permanen dari akun Anda.",
+        confirmLabel: "Hapus",
+      },
+      async () => {
+        await deleteMutation.mutateAsync(address.id);
+        if (editingId === address.id) {
+          resetForm();
+        }
+      },
+    );
   }
 
   function updateField(field: keyof AlamatPayload, value: string): void {
@@ -228,7 +241,7 @@ export default function AddressesPage() {
                           </Button>
                           <Button
                             aria-label={`Hapus alamat ${address.nama_alamat}`}
-                            onClick={() => void handleDelete(address)}
+                            onClick={() => handleDelete(address)}
                             size="icon"
                             variant="ghost"
                             className="size-8 text-destructive hover:text-destructive"
@@ -346,8 +359,8 @@ export default function AddressesPage() {
                   </Field>
 
                   <div className="flex flex-wrap items-center gap-2 pt-2">
-                    <Button disabled={isSaving} type="submit" className="flex-1">
-                      {isSaving
+                    <Button disabled={saveMutation.isPending} type="submit" className="flex-1">
+                      {saveMutation.isPending
                         ? "Menyimpan..."
                         : editingId === null
                         ? "Simpan Alamat"
@@ -365,6 +378,8 @@ export default function AddressesPage() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialogHost dialog={confirmDialog} />
     </StorePageShell>
   );
 }

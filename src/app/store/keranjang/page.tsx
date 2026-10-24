@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   ArrowRight,
   Leaf,
@@ -16,103 +15,91 @@ import {
 } from "lucide-react";
 
 import { StorePageShell } from "@/components/store-page-shell";
+import { ConfirmDialogHost } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
-import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
+import { useCart } from "@/hooks/useCart";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
+import { formatRupiah } from "@/lib/store-catalog";
 import { hasAuthSession } from "@/services/api";
-import {
-  clearKeranjang,
-  getKeranjang,
-  removeItemKeranjang,
-  updateItemKeranjang,
-} from "@/services/keranjangService";
-import type { Keranjang } from "@/types";
 
 export default function CartPage() {
   const router = useRouter();
-  const [cart, setCart] = useState<Keranjang | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadCart = useCallback(async (): Promise<void> => {
-    try {
-      const response = await getKeranjang();
-      setCart(response.data);
-      setError(null);
-    } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const {
+    cart,
+    items,
+    isLoading,
+    error,
+    updateItem,
+    removeItem,
+    clear,
+    refetch,
+  } = useCart();
+  const confirmDialog = useConfirmDialog();
+  const isUpdating = confirmDialog.isPending;
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!hasAuthSession()) {
-        router.replace("/store/akun/login");
-        return;
-      }
-      return loadCart();
-    });
-  }, [loadCart, router]);
+    if (!hasAuthSession()) {
+      router.replace("/store/akun/login");
+    }
+  }, [router]);
 
   async function changeQuantity(itemId: number, quantity: number): Promise<void> {
-    setIsUpdating(itemId);
-    try {
-      await updateItemKeranjang(itemId, quantity);
-      await loadCart();
-    } catch (updateError: unknown) {
+    if (quantity < 1) return;
+
+    const success = await updateItem(itemId, quantity);
+
+    if (!success) {
       toast.add({
         title: "Keranjang tidak dapat diperbarui",
-        description: getErrorMessage(updateError),
         type: "error",
       });
-    } finally {
-      setIsUpdating(null);
     }
   }
 
-  async function removeItem(itemId: number): Promise<void> {
-    setIsUpdating(itemId);
-    try {
-      await removeItemKeranjang(itemId);
-      await loadCart();
-      toast.add({
-        title: "Produk dihapus dari keranjang",
-        type: "success",
-      });
-    } catch (removeError: unknown) {
-      toast.add({
-        title: "Produk tidak dapat dihapus",
-        description: getErrorMessage(removeError),
-        type: "error",
-      });
-    } finally {
-      setIsUpdating(null);
-    }
+  function removeItemWithConfirm(itemId: number): void {
+    void confirmDialog.confirm(
+      {
+        title: "Hapus produk dari keranjang?",
+        description: "Produk akan dihapus dari keranjang belanja Anda.",
+        confirmLabel: "Hapus",
+      },
+      async () => {
+        const success = await removeItem(itemId);
+
+        if (success) {
+          toast.add({ title: "Produk dihapus dari keranjang", type: "success" });
+        } else {
+          toast.add({
+            title: "Produk tidak dapat dihapus",
+            type: "error",
+          });
+        }
+      },
+    );
   }
 
-  async function emptyCart(): Promise<void> {
-    if (!window.confirm("Kosongkan seluruh isi keranjang?")) return;
-    setIsUpdating(-1);
-    try {
-      await clearKeranjang();
-      await loadCart();
-      toast.add({
-        title: "Keranjang dikosongkan",
-        type: "success",
-      });
-    } catch (clearError: unknown) {
-      toast.add({
-        title: "Keranjang tidak dapat dikosongkan",
-        description: getErrorMessage(clearError),
-        type: "error",
-      });
-    } finally {
-      setIsUpdating(null);
-    }
+  function emptyCartWithConfirm(): void {
+    void confirmDialog.confirm(
+      {
+        title: "Kosongkan seluruh isi keranjang?",
+        description: "Semua produk dalam keranjang akan dihapus.",
+        confirmLabel: "Kosongkan",
+      },
+      async () => {
+        const success = await clear();
+
+        if (success) {
+          toast.add({ title: "Keranjang dikosongkan", type: "success" });
+        } else {
+          toast.add({
+            title: "Keranjang tidak dapat dikosongkan",
+            type: "error",
+          });
+        }
+      },
+    );
   }
 
   return (
@@ -148,7 +135,7 @@ export default function CartPage() {
       {error && (
         <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 text-sm text-destructive" role="alert">
           <p>Keranjang gagal dimuat: {error}</p>
-          <Button onClick={() => void loadCart()} size="sm" variant="outline">
+          <Button onClick={refetch} size="sm" variant="outline">
             Coba Lagi
           </Button>
         </div>
@@ -167,7 +154,7 @@ export default function CartPage() {
       )}
 
       {/* Keranjang Kosong */}
-      {!isLoading && !error && cart?.items.length === 0 && (
+      {!isLoading && !error && items.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-3xl border border-border bg-card py-20 text-center">
           <div className="flex size-20 items-center justify-center rounded-3xl bg-primary/10 text-primary">
             <ShoppingCart className="size-10" />
@@ -191,7 +178,7 @@ export default function CartPage() {
       )}
 
       {/* Konten Keranjang */}
-      {!isLoading && !error && cart && cart.items.length > 0 && (
+      {!isLoading && !error && cart && items.length > 0 && (
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
           {/* Kolom Kiri: Daftar Produk */}
           <section aria-label="Produk dalam keranjang" className="flex flex-col gap-4">
@@ -203,11 +190,11 @@ export default function CartPage() {
               <span className="w-10" />
             </div>
 
-            {cart.items.map((item) => (
+            {items.map((item) => (
               <div
                 key={item.id}
                 className={`group relative flex flex-wrap items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:shadow-sm sm:flex-nowrap ${
-                  isUpdating === item.id ? "opacity-60" : ""
+                  isUpdating ? "opacity-60" : ""
                 }`}
               >
                 {/* Gambar produk placeholder */}
@@ -232,7 +219,7 @@ export default function CartPage() {
                 <div className="flex items-center gap-2 sm:w-32 sm:justify-center">
                   <button
                     aria-label={`Kurangi jumlah ${item.nama_barang ?? "produk"}`}
-                    disabled={isUpdating !== null || item.jumlah <= 1}
+                    disabled={isUpdating || item.jumlah <= 1}
                     onClick={() => void changeQuantity(item.id, item.jumlah - 1)}
                     className="flex size-9 items-center justify-center rounded-xl border border-border bg-background transition-all hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-40"
                     type="button"
@@ -244,7 +231,7 @@ export default function CartPage() {
                   </span>
                   <button
                     aria-label={`Tambah jumlah ${item.nama_barang ?? "produk"}`}
-                    disabled={isUpdating !== null}
+                    disabled={isUpdating}
                     onClick={() => void changeQuantity(item.id, item.jumlah + 1)}
                     className="flex size-9 items-center justify-center rounded-xl border border-border bg-background transition-all hover:border-primary hover:bg-primary/5 hover:text-primary disabled:opacity-40"
                     type="button"
@@ -261,8 +248,8 @@ export default function CartPage() {
                 {/* Hapus */}
                 <button
                   aria-label={`Hapus ${item.nama_barang ?? "produk"} dari keranjang`}
-                  disabled={isUpdating !== null}
-                  onClick={() => void removeItem(item.id)}
+                  disabled={isUpdating}
+                  onClick={() => removeItemWithConfirm(item.id)}
                   className="ml-auto flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-destructive/10 hover:text-destructive disabled:opacity-40 sm:ml-0"
                   type="button"
                 >
@@ -274,8 +261,8 @@ export default function CartPage() {
             {/* Kosongkan keranjang */}
             <div className="flex justify-end pt-2">
               <button
-                disabled={isUpdating !== null}
-                onClick={() => void emptyCart()}
+                disabled={isUpdating}
+                onClick={emptyCartWithConfirm}
                 className="text-xs text-muted-foreground underline-offset-2 hover:text-destructive hover:underline disabled:opacity-40 transition-colors"
                 type="button"
               >
@@ -299,7 +286,7 @@ export default function CartPage() {
               <div className="space-y-4 p-6">
                 {/* Rincian item */}
                 <div className="space-y-2 text-sm">
-                  {cart.items.map((item) => (
+                  {items.map((item) => (
                     <div key={item.id} className="flex justify-between gap-3 text-muted-foreground">
                       <span className="min-w-0 truncate">
                         {item.nama_barang} × {item.jumlah}
@@ -339,7 +326,7 @@ export default function CartPage() {
 
                 <Button
                   className="w-full gap-2 py-3 text-base font-semibold"
-                  disabled={isUpdating !== null}
+                  disabled={isUpdating}
                   nativeButton={false}
                   render={<Link href="/store/checkout" />}
                   size="lg"
@@ -355,7 +342,7 @@ export default function CartPage() {
                   variant="ghost"
                   size="sm"
                 >
-                  ← Lanjut Belanja
+                  Lanjut Belanja
                 </Button>
               </div>
             </div>
@@ -370,6 +357,8 @@ export default function CartPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialogHost dialog={confirmDialog} />
     </StorePageShell>
   );
 }

@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { ChartPenjualan } from "@/components/chart-area-interactive";
 import { PesananTable } from "@/components/pesanan-table";
@@ -9,36 +10,27 @@ import { SectionCards } from "@/components/section-cards";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
 import { getDashboard } from "@/services/dashboardService";
-import type { Dashboard, RentangGrafik } from "@/types";
+import type { RentangGrafik } from "@/types";
 
 export default function Page() {
-  const [dashboard, setDashboard] = React.useState<Dashboard | null>(null);
   const [rentang, setRentang] = React.useState<RentangGrafik>("7h");
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
 
-  const loadDashboard = React.useCallback(
-    async (rentangAktif: RentangGrafik): Promise<void> => {
-      setIsLoading(true);
-
-      try {
-        const response = await getDashboard(rentangAktif);
-        setDashboard(response.data);
-        setError(null);
-      } catch (loadError: unknown) {
-        setError(getErrorMessage(loadError));
-      } finally {
-        setIsLoading(false);
-      }
+  const dashboardQuery = useQuery({
+    queryKey: queryKeys.dashboard(rentang),
+    queryFn: async () => {
+      const response = await getDashboard(rentang);
+      return response.data;
     },
-    [],
-  );
+  });
 
-  React.useEffect(() => {
-    void loadDashboard(rentang);
-  }, [loadDashboard, rentang]);
+  const dashboard = dashboardQuery.data ?? null;
+  const isLoading = dashboardQuery.isLoading;
+  const error = dashboardQuery.error instanceof Error
+    ? getErrorMessage(dashboardQuery.error)
+    : null;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -51,10 +43,10 @@ export default function Page() {
                 <AlertDescription className="flex flex-wrap items-center gap-3">
                   {error}
                   <Button
-                    onClick={() => void loadDashboard(rentang)}
+                    onClick={() => void dashboardQuery.refetch()}
                     size="sm"
                     variant="outline"
-                    disabled={isLoading}
+                    disabled={dashboardQuery.isFetching}
                   >
                     Coba lagi
                   </Button>

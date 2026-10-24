@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, Plus } from "lucide-react";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
@@ -11,14 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/hooks/useCart";
 import {
   formatRupiah,
   getErrorMessage,
   getProductImageUrl,
 } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
+import { queryKeys } from "@/lib/query-keys";
 import { getBarang } from "@/services/barangService";
-import { addItemKeranjang } from "@/services/keranjangService";
+import { hasAuthSession } from "@/services/api";
 import type { BarangCustomer } from "@/types";
 
 export default function StoreProductPage() {
@@ -26,42 +28,25 @@ export default function StoreProductPage() {
   const productId = Number(params.id);
   const isValidProductId = Number.isInteger(productId) && productId > 0;
   const router = useRouter();
-  const [product, setProduct] = useState<BarangCustomer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAdding, setIsAdding] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackIsError, setFeedbackIsError] = useState(false);
+  const { addItem, isAdding } = useCart();
 
-  useEffect(() => {
-    if (!isValidProductId) {
-      return;
-    }
+  const productQuery = useQuery({
+    queryKey: queryKeys.barang.detail(productId),
+    queryFn: async () => {
+      const response = await getBarang<BarangCustomer>(productId);
+      return response.data;
+    },
+    enabled: isValidProductId,
+  });
 
-    let isCurrent = true;
-
-    void getBarang<BarangCustomer>(productId)
-      .then((response) => {
-        if (isCurrent) {
-          setProduct(response.data);
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (isCurrent) {
-          setError(getErrorMessage(loadError));
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [isValidProductId, productId]);
+  const product = productQuery.data ?? null;
+  const isLoading = productQuery.isLoading;
+  const error = productQuery.error instanceof Error
+    ? getErrorMessage(productQuery.error)
+    : null;
 
   async function handleAddToCart(): Promise<void> {
     if (!product) {
@@ -73,18 +58,16 @@ export default function StoreProductPage() {
       return;
     }
 
-    setIsAdding(true);
     setFeedback(null);
     setFeedbackIsError(false);
 
-    try {
-      await addItemKeranjang(product.id, 1);
+    const result = await addItem(product.id, 1);
+
+    if (result) {
       setFeedback(`${product.NamaItem} berhasil ditambahkan ke keranjang.`);
-    } catch (addError: unknown) {
-      setFeedback(getErrorMessage(addError));
+    } else {
+      setFeedback("Gagal menambahkan produk ke keranjang.");
       setFeedbackIsError(true);
-    } finally {
-      setIsAdding(false);
     }
   }
 

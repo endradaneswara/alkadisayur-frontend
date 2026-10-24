@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
   Edit3,
@@ -13,14 +14,16 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { ConfirmDialogHost } from "@/components/confirm-dialog";
 import { StoreAccountNav } from "@/components/store-account-nav";
 import { StorePageShell } from "@/components/store-page-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { toast } from "@/components/ui/toast";
-import { getErrorMessage } from "@/lib/store-catalog";
+import { queryKeys } from "@/lib/query-keys";
 import { hasAuthSession } from "@/services/api";
 import {
   createUlasan,
@@ -28,106 +31,119 @@ import {
   listUlasan,
   updateUlasan,
 } from "@/services/ulasanService";
-import type { Ulasan } from "@/types";
 
 const ratingLabels = ["Sangat Buruk", "Buruk", "Cukup", "Bagus", "Sangat Bagus"];
 
 export default function ReviewsPage() {
   const router = useRouter();
   const { currentUser } = useAuth();
-  const [ownReview, setOwnReview] = useState<Ulasan | null>(null);
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const confirmDialog = useConfirmDialog();
 
   useEffect(() => {
     if (!hasAuthSession()) {
       router.replace("/store/akun/login");
-      return;
     }
-    // Tunggu profil tersedia dari AuthProvider agar uid sudah benar.
-    if (!currentUser) return;
-    void loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, currentUser?.id]);
+  }, [router]);
 
-  async function loadData(): Promise<void> {
-    setIsLoading(true);
-    try {
-      const reviewsRes = await listUlasan({ page: 1 });
-      const uid = currentUser?.id;
-      const mine =
-        uid !== undefined
-          ? (reviewsRes.data.find((r) => r.user_id === uid) ?? null)
-          : null;
-      setOwnReview(mine);
-      if (mine) {
-        setRating(mine.rating);
-        setComment(mine.komentar ?? "");
-      }
-    } catch {
-      /* silent */
-    } finally {
-      setIsLoading(false);
+  const reviewsQuery = useQuery({
+    queryKey: queryKeys.ulasan.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listUlasan({ page: 1 });
+      return response.data;
+    },
+    enabled: hasAuthSession() && currentUser !== null,
+  });
+
+  const uid = currentUser?.id;
+  const ownReview = useMemo(() => {
+    if (uid === undefined) return null;
+    return reviewsQuery.data?.find((review) => review.user_id === uid) ?? null;
+  }, [reviewsQuery.data, uid]);
+
+  // Sinkronkan form dengan ulasan yang sudah ada saat data pertama dimuat.
+  useEffect(() => {
+    if (ownReview && !isEditing) {
+      setRating(ownReview.rating);
+      setComment(ownReview.komentar ?? "");
     }
-  }
+  }, [ownReview, isEditing]);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>): Promise<void> {
-    e.preventDefault();
-    setError(null);
-    setIsSaving(true);
-    try {
+  const isLoading = reviewsQuery.isLoading;
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = { rating, komentar: comment.trim() || null };
       if (isEditing && ownReview) {
-        const res = await updateUlasan(ownReview.id, {
-          rating,
-          komentar: comment.trim() || null,
-        });
-        setOwnReview(res.data);
+        return updateUlasan(ownReview.id, payload);
+      }
+      return createUlasan(payload);
+    },
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ulasan.all });
+      setIsEditing(false);
+
+      if (isEditing) {
         toast.add({ title: "Ulasan diperbarui", type: "success" });
       } else {
-        const res = await createUlasan({
-          rating,
-          komentar: comment.trim() || null,
-        });
-        setOwnReview(res.data);
         toast.add({
           title: "Ulasan terkirim",
           description: "Terima kasih sudah berbagi pengalaman!",
           type: "success",
         });
       }
-      setIsEditing(false);
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.add({ title: "Gagal menyimpan ulasan", description: msg, type: "error" });
-    } finally {
-      setIsSaving(false);
-    }
-  }
+      void response;
+    },
+    onError: (saveError: Error) => {
+      setError(saveError.message);
+      toast.add({ title: "Gagal menyimpan ulasan", description: saveError.message, type: "error" });
+    },
+  });
 
-  async function handleDelete(): Promise<void> {
-    if (!ownReview || !window.confirm("Hapus ulasan Anda?")) return;
-    setIsDeleting(true);
-    try {
-      await deleteUlasan(ownReview.id);
-      setOwnReview(null);
+  const deleteMutation = useMutation({
+    mutationFn: async (ulasanId: number) => {
+      await deleteUlasan(ulasanId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.ulasan.all });
       setRating(5);
       setComment("");
       setIsEditing(false);
       toast.add({ title: "Ulasan dihapus", type: "success" });
-    } catch (err: unknown) {
-      toast.add({ title: "Gagal menghapus ulasan", description: getErrorMessage(err), type: "error" });
-    } finally {
-      setIsDeleting(false);
-    }
+    },
+    onError: (deleteError: Error) => {
+      toast.add({ title: "Gagal menghapus ulasan", description: deleteError.message, type: "error" });
+    },
+  });
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>): void {
+    e.preventDefault();
+    setError(null);
+    void saveMutation.mutateAsync();
   }
 
+  function handleDelete(): void {
+    if (!ownReview) return;
+
+    void confirmDialog.confirm(
+      {
+        title: "Hapus ulasan Anda?",
+        description: "Ulasan akan dihapus secara permanen.",
+        confirmLabel: "Hapus",
+      },
+      async () => {
+        await deleteMutation.mutateAsync(ownReview.id);
+      },
+    );
+  }
+
+  const isSaving = saveMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
   const displayRating = hoverRating || rating;
 
   return (
@@ -213,7 +229,7 @@ export default function ReviewsPage() {
                       <Button
                         className="gap-2 text-destructive hover:text-destructive"
                         disabled={isDeleting}
-                        onClick={() => void handleDelete()}
+                        onClick={handleDelete}
                         variant="outline"
                       >
                         <Trash2 className="size-4" />
@@ -354,6 +370,8 @@ export default function ReviewsPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialogHost dialog={confirmDialog} />
     </StorePageShell>
   );
 }

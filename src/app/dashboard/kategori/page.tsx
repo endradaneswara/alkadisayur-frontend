@@ -2,6 +2,7 @@
 "use client";
 
 import * as React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ChevronLeft,
   ChevronRight,
@@ -14,6 +15,8 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/hooks/useAuth";
+import { usePagination } from "@/hooks/usePagination";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
 import {
   createKategori,
@@ -91,17 +94,14 @@ export default function KategoriPage() {
 
 function KategoriContent() {
   const { currentUser, isLoading: isLoadingUser } = useAuth();
+  const queryClient = useQueryClient();
+  const pagination = usePagination();
+  const { page, lastPage } = pagination;
 
-  const [kategoriList, setKategoriList] = React.useState<Kategori[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState("");
 
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [deletingId, setDeletingId] = React.useState<number | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [listError, setListError] = React.useState<string | null>(null);
   const [formError, setFormError] = React.useState<string | null>(null);
 
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -111,45 +111,101 @@ function KategoriContent() {
 
   const isSuperAdmin = currentUser?.role === "superAdmin";
 
-  const loadKategori = React.useCallback(async () => {
-    if (isLoadingUser || !currentUser) return;
-
-    if (currentUser.role !== "superAdmin") {
-      setIsLoading(false);
-      setKategoriList([]);
-      setError(null);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const res = await listKategori({ page });
-
-      setKategoriList(res.data);
-      setLastPage(res.meta?.last_page ?? 1);
-      setTotal(res.meta?.total ?? res.data.length);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser, isLoadingUser, page]);
+  const kategoriQuery = useQuery({
+    queryKey: queryKeys.kategori.list({ page }),
+    queryFn: async () => {
+      const response = await listKategori({ page });
+      return response;
+    },
+    enabled: !isLoadingUser && isSuperAdmin,
+  });
 
   React.useEffect(() => {
-    void loadKategori();
-  }, [loadKategori]);
+    if (kategoriQuery.data) {
+      pagination.setMeta(kategoriQuery.data.meta);
+      setTotal(kategoriQuery.data.meta?.total ?? kategoriQuery.data.data.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kategoriQuery.data]);
 
-  const filteredList = React.useMemo(() => {
-    const query = searchQuery.trim().toLocaleLowerCase("id-ID");
+  const kategoriList = kategoriQuery.data?.data ?? [];
+  const isLoading = kategoriQuery.isLoading;
+  const error = listError ?? (kategoriQuery.error instanceof Error
+    ? getErrorMessage(kategoriQuery.error)
+    : null);
 
-    if (!query) return kategoriList;
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const namaKategori = form.nama_kategori.trim();
 
-    return kategoriList.filter((kategori) =>
-      kategori.nama_kategori.toLocaleLowerCase("id-ID").includes(query),
-    );
-  }, [kategoriList, searchQuery]);
+      if (formMode === "tambah") {
+        return createKategori({ nama_kategori: namaKategori });
+      }
+
+      if (!editTarget) {
+        throw new Error("Kategori tidak ditemukan.");
+      }
+
+      return updateKategori(editTarget.id, { nama_kategori: namaKategori });
+    },
+    onSuccess: async (_result) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.kategori.all });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.barang.all });
+
+      const namaKategori = form.nama_kategori.trim();
+
+      toast.add({
+        title: formMode === "tambah" ? "Kategori Ditambahkan" : "Kategori Diperbarui",
+        description: `Kategori "${namaKategori}" berhasil ${formMode === "tambah" ? "ditambahkan" : "diperbarui"}.`,
+        type: "success",
+      });
+
+      setSheetOpen(false);
+      setForm(EMPTY_FORM);
+    },
+    onError: (saveError: Error) => {
+      setFormError(saveError.message);
+      toast.add({
+        title: "Gagal Menyimpan Kategori",
+        description: saveError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await deleteKategori(id);
+      return id;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.kategori.all });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.barang.all });
+
+      toast.add({
+        title: "Kategori Dihapus",
+        description: "Kategori berhasil dihapus.",
+        type: "success",
+      });
+
+      // Jika kategori terakhir di halaman dihapus, kembali satu halaman.
+      if (kategoriList.length === 1 && page > 1) {
+        pagination.goToPreviousPage();
+      }
+    },
+    onError: (deleteError: Error) => {
+      setListError(deleteError.message);
+      toast.add({
+        title: "Gagal Menghapus Kategori",
+        description: deleteError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const isSaving = saveMutation.isPending;  const deletingId = deleteMutation.isPending
+    ? (deleteMutation.variables ?? null)
+    : null;
 
   const handleResetSearch = () => {
     setSearchQuery("");
@@ -171,7 +227,7 @@ function KategoriContent() {
     setSheetOpen(true);
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!isSuperAdmin) {
@@ -179,95 +235,33 @@ function KategoriContent() {
       return;
     }
 
-    const namaKategori = form.nama_kategori.trim();
-
-    if (!namaKategori) {
+    if (!form.nama_kategori.trim()) {
       setFormError("Nama kategori tidak boleh kosong.");
       return;
     }
 
-    setIsSaving(true);
     setFormError(null);
-
-    try {
-      if (formMode === "tambah") {
-        await createKategori({ nama_kategori: namaKategori });
-
-        toast.add({
-          title: "Kategori Ditambahkan",
-          description: `Kategori "${namaKategori}" berhasil ditambahkan.`,
-          type: "success",
-        });
-      } else {
-        if (!editTarget) return;
-
-        await updateKategori(editTarget.id, {
-          nama_kategori: namaKategori,
-        });
-
-        toast.add({
-          title: "Kategori Diperbarui",
-          description: `Kategori "${namaKategori}" berhasil diperbarui.`,
-          type: "success",
-        });
-      }
-
-      setSheetOpen(false);
-      setForm(EMPTY_FORM);
-
-      // Muat ulang dari server agar pagination dan total tetap konsisten.
-      await loadKategori();
-    } catch (err: unknown) {
-      const message = getErrorMessage(err);
-      setFormError(message);
-
-      toast.add({
-        title: "Gagal Menyimpan Kategori",
-        description: message,
-        type: "error",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    void saveMutation.mutateAsync();
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!isSuperAdmin) {
-      setError("Hanya Super Admin yang dapat menghapus kategori.");
+      setListError("Hanya Super Admin yang dapat menghapus kategori.");
       return;
     }
 
-    setDeletingId(id);
-    setError(null);
-
-    try {
-      await deleteKategori(id);
-
-      toast.add({
-        title: "Kategori Dihapus",
-        description: "Kategori berhasil dihapus.",
-        type: "success",
-      });
-
-      // Jika kategori terakhir di halaman dihapus, kembali satu halaman.
-      if (kategoriList.length === 1 && page > 1) {
-        setPage((previous) => previous - 1);
-      } else {
-        await loadKategori();
-      }
-    } catch (err: unknown) {
-      const message = getErrorMessage(err);
-      setError(message);
-
-      toast.add({
-        title: "Gagal Menghapus Kategori",
-        description: message,
-        type: "error",
-      });
-    } finally {
-      setDeletingId(null);
-    }
+    void deleteMutation.mutateAsync(id);
   };
+
+  const filteredList = React.useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase("id-ID");
+
+    if (!query) return kategoriList;
+
+    return kategoriList.filter((kategori) =>
+      kategori.nama_kategori.toLocaleLowerCase("id-ID").includes(query),
+    );
+  }, [kategoriList, searchQuery]);
 
   if (isLoadingUser) {
     return null;
@@ -335,7 +329,7 @@ function KategoriContent() {
                 <AlertDescription className="flex flex-wrap items-center gap-3">
                   {error}
                   <Button
-                    onClick={() => void loadKategori()}
+                    onClick={() => void kategoriQuery.refetch()}
                     size="sm"
                     variant="outline"
                     disabled={isLoading}
@@ -524,10 +518,8 @@ function KategoriContent() {
 
                   <div className="flex items-center gap-2">
                     <Button
-                      disabled={page <= 1 || isLoading}
-                      onClick={() =>
-                        setPage((previous) => Math.max(1, previous - 1))
-                      }
+                      disabled={!pagination.canGoPrevious || isLoading}
+                      onClick={pagination.goToPreviousPage}
                       size="sm"
                       variant="outline"
                     >
@@ -536,12 +528,8 @@ function KategoriContent() {
                     </Button>
 
                     <Button
-                      disabled={page >= lastPage || isLoading}
-                      onClick={() =>
-                        setPage((previous) =>
-                          Math.min(lastPage, previous + 1),
-                        )
-                      }
+                      disabled={!pagination.canGoNext || isLoading}
+                      onClick={pagination.goToNextPage}
                       size="sm"
                       variant="outline"
                     >

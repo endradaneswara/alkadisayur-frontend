@@ -50,8 +50,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
+import { Table,
   TableBody,
   TableCell,
   TableHead,
@@ -59,7 +58,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePagination } from "@/hooks/usePagination";
 import { toast } from "@/components/ui/toast";
+import { queryKeys } from "@/lib/query-keys";
 import { formatRupiah, getErrorMessage } from "@/lib/store-catalog";
 import {
   createLokasi,
@@ -103,20 +105,17 @@ export default function LokasiManagementPage() {
 
 function LokasiContent() {
   const { currentUser, isLoading: isLoadingUser } = useAuth();
+  const queryClient = useQueryClient();
+  const pagination = usePagination();
+  const { page, lastPage } = pagination;
 
-  const [lokasiList, setLokasiList] = React.useState<Lokasi[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
 
   // Filter
   const [searchQuery, setSearchQuery] = React.useState("");
 
   // Loading & status
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [deletingId, setDeletingId] = React.useState<number | null>(null);
-  const [error, setError] = React.useState<string | null>(null);
+  const [listError, setListError] = React.useState<string | null>(null);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
@@ -128,26 +127,85 @@ function LokasiContent() {
 
   const isSuperAdmin = currentUser?.role === "superAdmin";
 
-  // Load locations
-  const loadLokasi = React.useCallback(async () => {
-    if (isLoadingUser || !currentUser) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await listLokasi({ page });
-      setLokasiList(res.data);
-      setLastPage(res.meta?.last_page ?? 1);
-      setTotal(res.meta?.total ?? res.data.length);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoadingUser, currentUser, page]);
+  const lokasiQuery = useQuery({
+    queryKey: queryKeys.lokasi.list({ page }),
+    queryFn: async () => {
+      const response = await listLokasi({ page });
+      return response;
+    },
+    enabled: !isLoadingUser && currentUser !== null,
+  });
 
   React.useEffect(() => {
-    void loadLokasi();
-  }, [loadLokasi]);
+    if (lokasiQuery.data) {
+      pagination.setMeta(lokasiQuery.data.meta);
+      setTotal(lokasiQuery.data.meta?.total ?? lokasiQuery.data.data.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lokasiQuery.data]);
+
+  const lokasiList = lokasiQuery.data?.data ?? [];
+  const isLoading = lokasiQuery.isLoading;
+
+  const saveMutation = useMutation({
+    mutationFn: async (payload: LokasiPayload) => {
+      if (formMode === "tambah") {
+        return createLokasi(payload);
+      }
+      if (!editTarget) {
+        throw new Error("Lokasi tidak ditemukan.");
+      }
+      return updateLokasi(editTarget.id, payload);
+    },
+    onSuccess: async (_result, payload) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.lokasi.all });
+      await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+
+      toast.add({
+        title: formMode === "tambah" ? "Lokasi Cabang Ditambahkan" : "Lokasi Cabang Diperbarui",
+        description: `Cabang "${payload.nama}" berhasil ${formMode === "tambah" ? "ditambahkan" : "diperbarui"}.`,
+        type: "success",
+      });
+
+      setSheetOpen(false);
+    },
+    onError: (saveError: Error) => {
+      setFormError(saveError.message);
+      toast.add({
+        title: "Gagal Menyimpan Cabang",
+        description: saveError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (lokasi: Lokasi) => {
+      await deleteLokasi(lokasi.id);
+      return lokasi;
+    },
+    onSuccess: async (deletedLokasi) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.lokasi.all });
+
+      toast.add({
+        title: "Lokasi Cabang Dihapus",
+        description: `Cabang "${deletedLokasi.nama}" berhasil dihapus.`,
+        type: "success",
+      });
+    },
+    onError: (deleteError: Error) => {
+      setListError(deleteError.message);
+      toast.add({
+        title: "Gagal Menghapus Cabang",
+        description: deleteError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const deletingId = deleteMutation.isPending
+    ? (deleteMutation.variables?.id ?? null)
+    : null;
 
   // Client-side filter
   const filteredLokasi = React.useMemo(() => {
@@ -186,7 +244,7 @@ function LokasiContent() {
   };
 
   // Save (tambah / edit)
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nama.trim()) {
       setFormError("Nama cabang/lokasi wajib diisi.");
@@ -210,7 +268,6 @@ function LokasiContent() {
       return;
     }
 
-    setIsSaving(true);
     setFormError(null);
 
     const payload: LokasiPayload = {
@@ -222,60 +279,13 @@ function LokasiContent() {
       link_gmaps: form.link_gmaps.trim() || null,
     };
 
-    try {
-      if (formMode === "tambah") {
-        await createLokasi(payload);
-        toast.add({
-          title: "Lokasi Cabang Ditambahkan",
-          description: `Cabang "${payload.nama}" berhasil ditambahkan.`,
-          type: "success",
-        });
-      } else if (editTarget) {
-        await updateLokasi(editTarget.id, payload);
-        toast.add({
-          title: "Lokasi Cabang Diperbarui",
-          description: `Cabang "${payload.nama}" berhasil diperbarui.`,
-          type: "success",
-        });
-      }
-      setSheetOpen(false);
-      void loadLokasi();
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
-      setFormError(msg);
-      toast.add({
-        title: "Gagal Menyimpan Cabang",
-        description: msg,
-        type: "error",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    void saveMutation.mutateAsync(payload);
   };
 
   // Delete
-  const handleDelete = async (lokasi: Lokasi) => {
-    setDeletingId(lokasi.id);
-    setError(null);
-    try {
-      await deleteLokasi(lokasi.id);
-      toast.add({
-        title: "Lokasi Cabang Dihapus",
-        description: `Cabang "${lokasi.nama}" berhasil dihapus.`,
-        type: "success",
-      });
-      void loadLokasi();
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.add({
-        title: "Gagal Menghapus Cabang",
-        description: msg,
-        type: "error",
-      });
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDelete = (lokasi: Lokasi) => {
+    setListError(null);
+    void deleteMutation.mutateAsync(lokasi);
   };
 
   return (
@@ -315,12 +325,12 @@ function LokasiContent() {
           )}
 
           {/* Error Alert */}
-          {error && (
+          {listError && (
             <Alert variant="destructive">
               <AlertCircle className="size-4" />
               <AlertTitle>Terjadi Kesalahan</AlertTitle>
               <AlertDescription className="text-xs sm:text-sm">
-                {error}
+                {listError}
               </AlertDescription>
             </Alert>
           )}
@@ -545,8 +555,8 @@ function LokasiContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1 || isLoading}
+                    onClick={pagination.goToPreviousPage}
+                    disabled={!pagination.canGoPrevious || isLoading}
                     className="h-8 px-2.5 text-xs"
                     aria-label="Halaman sebelumnya"
                   >
@@ -556,8 +566,8 @@ function LokasiContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-                    disabled={page >= lastPage || isLoading}
+                    onClick={pagination.goToNextPage}
+                    disabled={!pagination.canGoNext || isLoading}
                     className="h-8 px-2.5 text-xs"
                     aria-label="Halaman berikutnya"
                   >
@@ -599,12 +609,12 @@ function LokasiContent() {
                 </Label>
                 <Input
                   id="nama-cabang"
-                  placeholder="Contoh: Cabang Utama Kemang"
+                  placeholder="Masukan nama cabang"
                   value={form.nama}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, nama: e.target.value }))
                   }
-                  disabled={isSaving}
+                  disabled={saveMutation.isPending}
                 />
               </div>
 
@@ -623,7 +633,7 @@ function LokasiContent() {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, latitude: e.target.value }))
                     }
-                    disabled={isSaving}
+                    disabled={saveMutation.isPending}
                     className="font-mono text-xs"
                   />
                 </div>
@@ -640,7 +650,7 @@ function LokasiContent() {
                     onChange={(e) =>
                       setForm((f) => ({ ...f, longitude: e.target.value }))
                     }
-                    disabled={isSaving}
+                    disabled={saveMutation.isPending}
                     className="font-mono text-xs"
                   />
                 </div>
@@ -661,7 +671,7 @@ function LokasiContent() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, biaya_pengiriman: e.target.value }))
                   }
-                  disabled={isSaving}
+                  disabled={saveMutation.isPending}
                 />
               </div>
 
@@ -675,7 +685,7 @@ function LokasiContent() {
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
                     setForm((f) => ({ ...f, deskripsi: e.target.value }))
                   }
-                  disabled={isSaving}
+                  disabled={saveMutation.isPending}
                   rows={3}
                   className="w-full rounded-lg border border-input bg-card px-3 py-2 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                 />
@@ -692,7 +702,7 @@ function LokasiContent() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, link_gmaps: e.target.value }))
                   }
-                  disabled={isSaving}
+                  disabled={saveMutation.isPending}
                 />
                 <p className="text-[11px] text-muted-foreground">
                   Tautan Google Maps toko untuk memudahkan pembeli membuka petunjuk arah.
@@ -704,17 +714,17 @@ function LokasiContent() {
                   type="button"
                   variant="outline"
                   onClick={() => setSheetOpen(false)}
-                  disabled={isSaving}
+                  disabled={saveMutation.isPending}
                   className="text-xs"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={saveMutation.isPending}
                   className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs"
                 >
-                  {isSaving ? "Menyimpan..." : formMode === "tambah" ? "Tambah Cabang" : "Simpan Perubahan"}
+                  {saveMutation.isPending ? "Menyimpan..." : formMode === "tambah" ? "Tambah Cabang" : "Simpan Perubahan"}
                 </Button>
               </div>
             </form>

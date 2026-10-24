@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   BellOff,
@@ -37,15 +38,20 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { usePagination } from "@/hooks/usePagination";
 import { toast } from "@/components/ui/toast";
-import { getErrorMessage } from "@/lib/store-catalog";
+import { queryKeys } from "@/lib/query-keys";
 import {
   deleteAdminNotifikasi,
   listAdminNotifikasi,
   markAdminNotifikasiRead,
   markAllAdminNotifikasiRead,
 } from "@/services/notifikasiService";
-import type { Notifikasi, StatusPesanan } from "@/types";
+import type {
+  Notifikasi,
+  ResponsApiPaginated,
+  StatusPesanan,
+} from "@/types";
 
 function getStatusBadgeVariant(
   status: StatusPesanan | undefined,
@@ -114,93 +120,99 @@ export default function NotifikasiPage() {
 
 function NotifikasiContent() {
   const { currentUser, isLoading: isLoadingUser } = useAuth();
+  const queryClient = useQueryClient();
+  const pagination = usePagination();
+  const { page, lastPage } = pagination;
 
-  const [notifikasiList, setNotifikasiList] = React.useState<Notifikasi[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
   const [totalUnread, setTotalUnread] = React.useState(0);
-
-  const [isLoading, setIsLoading] = React.useState(true);
   const [isMarkingAll, setIsMarkingAll] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
 
-  const loadNotifikasi = React.useCallback(async () => {
-    if (isLoadingUser || !currentUser) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await listAdminNotifikasi({ page });
-      setNotifikasiList(res.data);
-      setLastPage(res.meta?.last_page ?? 1);
-      setTotalUnread(res.data.filter((n) => !n.sudah_dibaca).length);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoadingUser, currentUser, page]);
+  const notifikasiQuery = useQuery({
+    queryKey: queryKeys.adminNotifikasi.list({ page }),
+    queryFn: async () => {
+      const response = await listAdminNotifikasi({ page });
+      return response;
+    },
+    enabled: !isLoadingUser && currentUser !== null,
+  });
 
   React.useEffect(() => {
-    void loadNotifikasi();
-  }, [loadNotifikasi]);
+    if (notifikasiQuery.data) {
+      pagination.setMeta(notifikasiQuery.data.meta);
+      setTotalUnread(
+        notifikasiQuery.data.data.filter((n) => !n.sudah_dibaca).length,
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifikasiQuery.data]);
 
-  const handleMarkRead = async (id: number) => {
-    try {
+  const notifikasiList = notifikasiQuery.data?.data ?? [];
+  const isLoading = notifikasiQuery.isLoading;
+
+  const markReadMutation = useMutation({
+    mutationFn: async ({ id, sudahDibaca }: { id: number; sudahDibaca: boolean }) => {
       await markAdminNotifikasiRead(id);
-      setNotifikasiList((prev) =>
-        prev.map((n) =>
-          n.id === id
+      return { id, sudahDibaca };
+    },
+    onSuccess: (_result, { id }) => {
+      queryClient.setQueryData(
+        queryKeys.adminNotifikasi.list({ page }),
+        (current: ResponsApiPaginated<Notifikasi> | undefined) =>
+          current
             ? {
-                ...n,
-                sudah_dibaca: true,
-                dibaca_pada: new Date().toISOString(),
+                ...current,
+                data: current.data.map((n) =>
+                  n.id === id
+                    ? { ...n, sudah_dibaca: true, dibaca_pada: new Date().toISOString() }
+                    : n,
+                ),
               }
-            : n,
-        ),
+            : current,
       );
       setTotalUnread((prev) => Math.max(0, prev - 1));
-    } catch {
+    },
+    onError: () => {
       // silently ignore
-    }
-  };
+    },
+  });
 
-  const handleMarkAllRead = async () => {
-    setIsMarkingAll(true);
-    try {
+  const markAllReadMutation = useMutation({
+    mutationFn: async () => {
       await markAllAdminNotifikasiRead();
-      setNotifikasiList((prev) =>
-        prev.map((n) => ({
-          ...n,
-          sudah_dibaca: true,
-          dibaca_pada: n.dibaca_pada ?? new Date().toISOString(),
-        })),
-      );
-      setTotalUnread(0);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.adminNotifikasi.all,
+      });
       toast.add({
         title: "Semua Ditandai Dibaca",
         description: "Seluruh notifikasi berhasil ditandai sebagai sudah dibaca.",
         type: "success",
       });
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
+    },
+    onError: (markError: Error) => {
+      const msg = markError.message;
       setError(msg);
       toast.add({
         title: "Gagal Menandai Notifikasi",
         description: msg,
         type: "error",
       });
-    } finally {
-      setIsMarkingAll(false);
-    }
-  };
+    },
+  });
 
-  const handleDelete = async (id: number) => {
-    setDeletingId(id);
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
       await deleteAdminNotifikasi(id);
-      const deleted = notifikasiList.find((n) => n.id === id);
-      setNotifikasiList((prev) => prev.filter((n) => n.id !== id));
+      return id;
+    },
+    onSuccess: async (deletedId) => {
+      const deleted = notifikasiList.find((n) => n.id === deletedId);
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.adminNotifikasi.all,
+      });
       if (deleted && !deleted.sudah_dibaca) {
         setTotalUnread((prev) => Math.max(0, prev - 1));
       }
@@ -209,14 +221,33 @@ function NotifikasiContent() {
         description: "Notifikasi berhasil dihapus.",
         type: "success",
       });
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
+    },
+    onError: (deleteError: Error) => {
+      const msg = deleteError.message;
       setError(msg);
       toast.add({
         title: "Gagal Menghapus Notifikasi",
         description: msg,
         type: "error",
       });
+    },
+  });
+
+  const handleMarkRead = (id: number): void => {
+    void markReadMutation.mutateAsync({ id, sudahDibaca: false });
+  };
+
+  const handleMarkAllRead = (): void => {
+    setIsMarkingAll(true);
+    void markAllReadMutation
+      .mutateAsync()
+      .finally(() => setIsMarkingAll(false));
+  };
+
+  const handleDelete = async (id: number): Promise<void> => {
+    setDeletingId(id);
+    try {
+      await deleteMutation.mutateAsync(id);
     } finally {
       setDeletingId(null);
     }
@@ -268,7 +299,7 @@ function NotifikasiContent() {
                     <AlertDescription className="flex flex-wrap items-center gap-3">
                       {error}
                       <Button
-                        onClick={() => void loadNotifikasi()}
+                        onClick={() => void notifikasiQuery.refetch()}
                         size="sm"
                         variant="outline"
                       >
@@ -474,10 +505,8 @@ function NotifikasiContent() {
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
-                          disabled={page <= 1 || isLoading}
-                          onClick={() =>
-                            setPage((prev) => Math.max(1, prev - 1))
-                          }
+                          disabled={!pagination.canGoPrevious || isLoading}
+                          onClick={pagination.goToPreviousPage}
                           size="sm"
                           variant="outline"
                         >
@@ -485,10 +514,8 @@ function NotifikasiContent() {
                           Sebelumnya
                         </Button>
                         <Button
-                          disabled={page >= lastPage || isLoading}
-                          onClick={() =>
-                            setPage((prev) => Math.min(lastPage, prev + 1))
-                          }
+                          disabled={!pagination.canGoNext || isLoading}
+                          onClick={pagination.goToNextPage}
                           size="sm"
                           variant="outline"
                         >

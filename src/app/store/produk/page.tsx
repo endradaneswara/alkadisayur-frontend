@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, Search } from "lucide-react";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
@@ -27,13 +28,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { usePagination } from "@/hooks/usePagination";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
 import { listBarang } from "@/services/barangService";
 import {
   listBarangByKategori,
   listKategori,
 } from "@/services/kategoriService";
-import type { BarangCustomer, Kategori } from "@/types";
+import type { BarangCustomer } from "@/types";
 
 interface PaginationState {
   currentPage: number;
@@ -48,83 +52,55 @@ const emptyPagination: PaginationState = {
 };
 
 export default function StoreProductsPage() {
-  const [products, setProducts] = useState<BarangCustomer[]>([]);
-  const [categories, setCategories] = useState<Kategori[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pagination, setPagination] = useState(emptyPagination);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    let isCurrent = true;
+  const debouncedSearch = useDebounce(searchTerm, 400);
 
-    void listKategori({ page: 1 })
-      .then((response) => {
-        if (isCurrent) {
-          setCategories(response.data);
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (isCurrent) {
-          setCategoryError(getErrorMessage(loadError));
-        }
-      });
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.kategori.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listKategori({ page: 1 });
+      return response.data;
+    },
+  });
 
-    return () => {
-      isCurrent = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isCurrent = true;
-
-    void Promise.resolve().then(() => {
-      if (!isCurrent) {
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      const request =
+  const productsQuery = useQuery({
+    queryKey: queryKeys.barang.list({
+      page,
+      kategoriId: selectedCategory,
+    }),
+    queryFn: async () => {
+      const response =
         selectedCategory === null
-          ? listBarang({ page: pagination.currentPage })
-          : listBarangByKategori(selectedCategory, {
-              page: pagination.currentPage,
-            });
+          ? await listBarang<BarangCustomer>({ page })
+          : await listBarangByKategori(selectedCategory, { page });
 
-      return request
-        .then((response) => {
-          if (isCurrent) {
-            setProducts(response.data);
-            setPagination({
-              currentPage: response.meta.current_page,
-              lastPage: response.meta.last_page,
-              total: response.meta.total,
-            });
-          }
-        })
-        .catch((loadError: unknown) => {
-          if (isCurrent) {
-            setError(getErrorMessage(loadError));
-          }
-        })
-        .finally(() => {
-          if (isCurrent) {
-            setIsLoading(false);
-          }
-        });
-    });
+      return response;
+    },
+  });
 
-    return () => {
-      isCurrent = false;
-    };
-  }, [pagination.currentPage, selectedCategory]);
+  const categories = categoriesQuery.data ?? [];
+  const products = productsQuery.data?.data ?? [];
+  const pagination = productsQuery.data?.meta;
+  const isLoading = productsQuery.isLoading;
+  const error = productsQuery.error instanceof Error
+    ? getErrorMessage(productsQuery.error)
+    : null;
+  const categoryError = categoriesQuery.error instanceof Error
+    ? getErrorMessage(categoriesQuery.error)
+    : null;
+
+  // Reset ke halaman pertama saat filter kategori atau pencarian berubah.
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, debouncedSearch]);
+
+  const lastPage = pagination?.last_page ?? 1;
 
   const filteredProducts = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLocaleLowerCase("id-ID");
+    const normalizedSearch = debouncedSearch.trim().toLocaleLowerCase("id-ID");
 
     if (!normalizedSearch) {
       return products;
@@ -142,42 +118,39 @@ export default function StoreProductsPage() {
           value?.toLocaleLowerCase("id-ID").includes(normalizedSearch),
         ),
     );
-  }, [products, searchTerm]);
+  }, [products, debouncedSearch]);
 
   const paginationItems = useMemo(() => {
     const pages = new Set([
       1,
-      pagination.lastPage,
-      pagination.currentPage - 1,
-      pagination.currentPage,
-      pagination.currentPage + 1,
+      lastPage,
+      page - 1,
+      page,
+      page + 1,
     ]);
     const visiblePages = [...pages]
-      .filter((page) => page >= 1 && page <= pagination.lastPage)
+      .filter((p) => p >= 1 && p <= lastPage)
       .sort((first, second) => first - second);
 
-    return visiblePages.reduce<Array<number | "ellipsis">>((items, page, index) => {
+    return visiblePages.reduce<Array<number | "ellipsis">>((items, p, index) => {
       const previousPage = visiblePages[index - 1];
 
-      if (previousPage && page - previousPage > 1) {
+      if (previousPage && p - previousPage > 1) {
         items.push("ellipsis");
       }
 
-      items.push(page);
+      items.push(p);
       return items;
     }, []);
-  }, [pagination.currentPage, pagination.lastPage]);
+  }, [page, lastPage]);
 
   function selectCategory(categoryId: number | null): void {
     setSelectedCategory(categoryId);
-    setPagination(emptyPagination);
+    setPage(1);
   }
 
-  function selectPage(page: number): void {
-    setPagination((current) => ({
-      ...current,
-      currentPage: Math.max(1, Math.min(page, current.lastPage)),
-    }));
+  function selectPage(target: number): void {
+    setPage(Math.max(1, Math.min(target, lastPage)));
   }
 
   return (
@@ -342,23 +315,23 @@ export default function StoreProductsPage() {
             ) : null}
           </div>
 
-          {!isLoading && !error && pagination.lastPage > 1 ? (
+          {!isLoading && !error && lastPage > 1 ? (
             <div className="mt-8 flex flex-col items-center gap-3">
               <Pagination aria-label="Navigasi halaman produk">
                 <PaginationContent className="flex-wrap">
                   <PaginationItem>
                     <PaginationPrevious
                       aria-label="Halaman sebelumnya"
-                      aria-disabled={pagination.currentPage <= 1}
+                      aria-disabled={page <= 1}
                       className={
-                        pagination.currentPage <= 1
+                        page <= 1
                           ? "pointer-events-none opacity-50"
                           : undefined
                       }
                       href="#products-title"
                       onClick={(event) => {
                         event.preventDefault();
-                        selectPage(pagination.currentPage - 1);
+                        selectPage(page - 1);
                       }}
                       text="Sebelumnya"
                     />
@@ -371,7 +344,7 @@ export default function StoreProductsPage() {
                         <PaginationLink
                           aria-label={`Halaman ${item}`}
                           href="#products-title"
-                          isActive={item === pagination.currentPage}
+                          isActive={item === page}
                           onClick={(event) => {
                             event.preventDefault();
                             selectPage(item);
@@ -385,18 +358,16 @@ export default function StoreProductsPage() {
                   <PaginationItem>
                     <PaginationNext
                       aria-label="Halaman berikutnya"
-                      aria-disabled={
-                        pagination.currentPage >= pagination.lastPage
-                      }
+                      aria-disabled={page >= lastPage}
                       className={
-                        pagination.currentPage >= pagination.lastPage
+                        page >= lastPage
                           ? "pointer-events-none opacity-50"
                           : undefined
                       }
                       href="#products-title"
                       onClick={(event) => {
                         event.preventDefault();
-                        selectPage(pagination.currentPage + 1);
+                        selectPage(page + 1);
                       }}
                       text="Berikutnya"
                     />
@@ -404,7 +375,8 @@ export default function StoreProductsPage() {
                 </PaginationContent>
               </Pagination>
               <p className="text-sm text-muted-foreground">
-                Halaman {pagination.currentPage} dari {pagination.lastPage}
+                Halaman {page} dari {lastPage}
+                {pagination?.total ? ` — ${pagination.total} produk` : ""}
               </p>
             </div>
           ) : null}

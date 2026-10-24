@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   Calendar,
   Clock,
-  ExternalLink,
   PackageCheck,
   PackageOpen,
   RefreshCw,
@@ -22,10 +22,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePagination } from "@/hooks/usePagination";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage, formatRupiah } from "@/lib/store-catalog";
 import { hasAuthSession } from "@/services/api";
 import { listPesanan } from "@/services/pesananService";
-import type { Pesanan, StatusPesanan } from "@/types";
+import type { StatusPesanan } from "@/types";
 
 const orderStatusLabels: Record<StatusPesanan, string> = {
   pending: "Menunggu Konfirmasi",
@@ -59,36 +61,36 @@ const filterOptions: { label: string; value: StatusFilter }[] = [
 
 export default function OrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Pesanan[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("semua");
-  const [page, setPage] = useState(1);
-  const [lastPage, setLastPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const pagination = usePagination();
 
-  const loadOrders = useCallback(async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const response = await listPesanan({ page });
-      setOrders(response.data);
-      setLastPage(response.meta?.last_page ?? 1);
-      setError(null);
-    } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [page]);
+  const ordersQuery = useQuery({
+    queryKey: queryKeys.pesanan.list({ page: pagination.page }),
+    queryFn: async () => {
+      const response = await listPesanan({ page: pagination.page });
+      return response;
+    },
+    enabled: hasAuthSession(),
+  });
 
   useEffect(() => {
-    void Promise.resolve().then(() => {
-      if (!hasAuthSession()) {
-        router.replace("/store/akun/login");
-        return;
-      }
-      return loadOrders();
-    });
-  }, [loadOrders, router]);
+    if (!hasAuthSession()) {
+      router.replace("/store/akun/login");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    if (ordersQuery.data) {
+      pagination.setMeta(ordersQuery.data.meta);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ordersQuery.data]);
+
+  const orders = ordersQuery.data?.data ?? [];
+  const isLoading = ordersQuery.isLoading;
+  const error = ordersQuery.error instanceof Error
+    ? getErrorMessage(ordersQuery.error)
+    : null;
 
   // Filter pesanan sesuai tab status yang dipilih
   const filteredOrders = orders.filter((order) => {
@@ -108,8 +110,8 @@ export default function OrdersPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void loadOrders()}
-              disabled={isLoading}
+              onClick={() => void ordersQuery.refetch()}
+              disabled={isLoading || ordersQuery.isFetching}
               className="gap-2"
             >
               <RefreshCw
@@ -168,7 +170,7 @@ export default function OrdersPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => void loadOrders()}
+                onClick={() => void ordersQuery.refetch()}
               >
                 Coba Lagi
               </Button>
@@ -336,26 +338,27 @@ export default function OrdersPage() {
         ) : null}
 
         {/* Pagination */}
-        {!isLoading && lastPage > 1 ? (
+        {!isLoading && pagination.lastPage > 1 ? (
           <nav
             aria-label="Navigasi halaman pesanan"
             className="mt-8 flex items-center justify-between border-t border-border pt-6"
           >
             <Button
-              disabled={page <= 1}
-              onClick={() => setPage((current) => current - 1)}
+              disabled={!pagination.canGoPrevious}
+              onClick={pagination.goToPreviousPage}
               variant="outline"
               size="sm"
             >
               Sebelumnya
             </Button>
             <p className="text-sm text-muted-foreground">
-              Halaman <span className="font-bold text-foreground">{page}</span>{" "}
-              dari {lastPage}
+              Halaman{" "}
+              <span className="font-bold text-foreground">{pagination.page}</span>{" "}
+              dari {pagination.lastPage}
             </p>
             <Button
-              disabled={page >= lastPage}
-              onClick={() => setPage((current) => current + 1)}
+              disabled={!pagination.canGoNext}
+              onClick={pagination.goToNextPage}
               variant="outline"
               size="sm"
             >

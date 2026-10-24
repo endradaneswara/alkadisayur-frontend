@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Apple,
   ArrowRight,
@@ -23,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
 import { listKategori } from "@/services/kategoriService";
 import type { Kategori } from "@/types";
@@ -126,44 +129,31 @@ function getCategoryTheme(categoryName: string) {
 }
 
 export default function StoreCategoriesPage() {
-  const [categories, setCategories] = useState<Kategori[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const debouncedSearch = useDebounce(searchTerm, 300);
 
-  useEffect(() => {
-    let isCurrent = true;
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.kategori.list({ page: 1 }),
+    queryFn: async () => {
+      const response = await listKategori({ page: 1 });
+      return response.data;
+    },
+  });
 
-    void listKategori({ page: 1 })
-      .then((response) => {
-        if (isCurrent) {
-          setCategories(response.data);
-        }
-      })
-      .catch((loadError: unknown) => {
-        if (isCurrent) {
-          setError(getErrorMessage(loadError));
-        }
-      })
-      .finally(() => {
-        if (isCurrent) {
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      isCurrent = false;
-    };
-  }, []);
+  const categories = categoriesQuery.data ?? [];
+  const isLoading = categoriesQuery.isLoading;
+  const error = categoriesQuery.error instanceof Error
+    ? getErrorMessage(categoriesQuery.error)
+    : null;
 
   const filteredCategories = useMemo(() => {
-    const q = searchTerm.trim().toLowerCase();
+    const q = debouncedSearch.trim().toLowerCase();
     if (!q) return categories;
     return categories.filter((c) =>
       c.nama_kategori.toLowerCase().includes(q) ||
       formatCategory(c.nama_kategori).toLowerCase().includes(q)
     );
-  }, [categories, searchTerm]);
+  }, [categories, debouncedSearch]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

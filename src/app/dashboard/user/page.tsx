@@ -56,8 +56,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuth } from "@/hooks/useAuth";
+import { usePagination } from "@/hooks/usePagination";
 import { toast } from "@/components/ui/toast";
+import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { listPengguna, updateRolePengguna } from "@/services/penggunaService";
 import type { Pengguna, RolePengguna } from "@/types";
 
@@ -112,49 +115,91 @@ export default function UserManagementPage() {
 
 function UserManagementContent() {
   const { currentUser, isLoading: isLoadingUser } = useAuth();
+  const queryClient = useQueryClient();
+  const pagination = usePagination();
+  const { page, lastPage } = pagination;
 
-  const [userList, setUserList] = React.useState<Pengguna[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [lastPage, setLastPage] = React.useState(1);
   const [total, setTotal] = React.useState(0);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filterRole, setFilterRole] = React.useState<string>("semua");
 
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isUpdatingRole, setIsUpdatingRole] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
+  const [listError, setListError] = React.useState<string | null>(null);
   const [successMessage, setSuccessMessage] = React.useState<string | null>(null);
 
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [selectedUser, setSelectedUser] = React.useState<Pengguna | null>(null);
   const [selectedRole, setSelectedRole] = React.useState<RolePengguna>("customer");
 
-  // Load users
-  const loadUsers = React.useCallback(async () => {
-    if (isLoadingUser || !currentUser) return;
-    if (currentUser.role !== "superAdmin") {
-      setIsLoading(false);
-      return;
-    }
+  const isSuperAdmin = currentUser?.role === "superAdmin";
 
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await listPengguna({ page });
-      setUserList(res.data);
-      setLastPage(res.meta?.last_page ?? 1);
-      setTotal(res.meta?.total ?? res.data.length);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoadingUser, currentUser, page]);
+  const usersQuery = useQuery({
+    queryKey: queryKeys.pengguna.list({ page }),
+    queryFn: async () => {
+      const response = await listPengguna({ page });
+      return response;
+    },
+    enabled: !isLoadingUser && isSuperAdmin,
+  });
 
   React.useEffect(() => {
-    void loadUsers();
-  }, [loadUsers]);
+    if (usersQuery.data) {
+      pagination.setMeta(usersQuery.data.meta);
+      setTotal(usersQuery.data.meta?.total ?? usersQuery.data.data.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usersQuery.data]);
+
+  const userList = usersQuery.data?.data ?? [];
+  const isLoading = usersQuery.isLoading;
+
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: number; role: RolePengguna }) => {
+      return updateRolePengguna(userId, role);
+    },
+    onSuccess: async (_result, { role }) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.pengguna.all });
+
+      setSheetOpen(false);
+      toast.add({
+        title: "Role Berhasil Diperbarui",
+        description: `Peran untuk ${selectedUser?.name ?? "pengguna"} berhasil diubah menjadi ${role}.`,
+        type: "success",
+      });
+    },
+    onError: (updateError: Error) => {
+      setListError(updateError.message);
+      toast.add({
+        title: "Gagal Mengubah Role",
+        description: updateError.message,
+        type: "error",
+      });
+    },
+  });
+
+  const handleOpenEdit = (user: Pengguna) => {
+    setSelectedUser(user);
+    setSelectedRole(user.role);
+    setSheetOpen(true);
+  };
+
+  const handleSaveRole = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    void updateRoleMutation.mutateAsync({
+      userId: selectedUser.id,
+      role: selectedRole,
+    });
+  };
+
+  const handleResetFilter = () => {
+    setSearchQuery("");
+    setFilterRole("semua");
+    pagination.reset();
+  };
+
+  const hasActiveFilter = searchQuery !== "" || filterRole !== "semua";
 
   const filteredUsers = React.useMemo(() => {
     return userList.filter((u) => {
@@ -170,48 +215,6 @@ function UserManagementContent() {
       return matchSearch && matchRole;
     });
   }, [userList, searchQuery, filterRole]);
-
-  const handleOpenEdit = (user: Pengguna) => {
-    setSelectedUser(user);
-    setSelectedRole(user.role);
-    setSheetOpen(true);
-  };
-
-  const handleSaveRole = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-
-    setIsUpdatingRole(true);
-    setError(null);
-    try {
-      await updateRolePengguna(selectedUser.id, selectedRole);
-      setSheetOpen(false);
-      toast.add({
-        title: "Role Berhasil Diperbarui",
-        description: `Peran untuk ${selectedUser.name} berhasil diubah menjadi ${selectedRole}.`,
-        type: "success",
-      });
-      void loadUsers();
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
-      setError(msg);
-      toast.add({
-        title: "Gagal Mengubah Role",
-        description: msg,
-        type: "error",
-      });
-    } finally {
-      setIsUpdatingRole(false);
-    }
-  };
-
-  const handleResetFilter = () => {
-    setSearchQuery("");
-    setFilterRole("semua");
-    setPage(1);
-  };
-
-  const hasActiveFilter = searchQuery !== "" || filterRole !== "semua";
 
   return (
     <>
@@ -237,12 +240,12 @@ function UserManagementContent() {
             </Alert>
           )}
 
-          {error && (
+          {listError && (
             <Alert variant="destructive">
               <AlertCircle className="size-4" />
               <AlertTitle>Terjadi Kesalahan</AlertTitle>
               <AlertDescription className="text-xs sm:text-sm">
-                {error}
+                {listError}
               </AlertDescription>
             </Alert>
           )}
@@ -450,8 +453,8 @@ function UserManagementContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page <= 1 || isLoading}
+                      onClick={pagination.goToPreviousPage}
+                      disabled={!pagination.canGoPrevious || isLoading}
                       className="h-8 px-2.5 text-xs"
                       aria-label="Halaman sebelumnya"
                     >
@@ -461,8 +464,8 @@ function UserManagementContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
-                      disabled={page >= lastPage || isLoading}
+                      onClick={pagination.goToNextPage}
+                      disabled={!pagination.canGoNext || isLoading}
                       className="h-8 px-2.5 text-xs"
                       aria-label="Halaman berikutnya"
                     >
@@ -498,7 +501,7 @@ function UserManagementContent() {
                   <Select
                     value={selectedRole}
                     onValueChange={(v) => setSelectedRole((v ?? "customer") as RolePengguna)}
-                    disabled={isUpdatingRole}
+                    disabled={updateRoleMutation.isPending}
                   >
                     <SelectTrigger id="role-select" className="w-full">
                       <SelectValue />
@@ -556,17 +559,17 @@ function UserManagementContent() {
                     type="button"
                     variant="outline"
                     onClick={() => setSheetOpen(false)}
-                    disabled={isUpdatingRole}
+                    disabled={updateRoleMutation.isPending}
                     className="text-xs"
                   >
                     Batal
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isUpdatingRole}
+                    disabled={updateRoleMutation.isPending}
                     className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs"
                   >
-                    {isUpdatingRole ? "Menyimpan..." : "Simpan Perubahan"}
+                    {updateRoleMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
                   </Button>
                 </div>
               </form>
