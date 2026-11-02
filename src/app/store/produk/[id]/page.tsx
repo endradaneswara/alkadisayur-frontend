@@ -17,6 +17,7 @@ import {
   formatRupiah,
   getErrorMessage,
   getProductImageUrl,
+  isProductAvailable,
 } from "@/lib/store-catalog";
 import { queryKeys } from "@/lib/query-keys";
 import { getBarang } from "@/services/barangService";
@@ -43,6 +44,7 @@ export default function StoreProductPage() {
   });
 
   const product = productQuery.data ?? null;
+  const isAvailable = product ? isProductAvailable(product) : false;
   const isLoading = productQuery.isLoading;
   const error = productQuery.error instanceof Error
     ? getErrorMessage(productQuery.error)
@@ -175,7 +177,7 @@ export default function StoreProductPage() {
                 {product.nama_kategori ? (
                   <Link
                     className="w-fit text-sm font-medium text-primary hover:underline"
-                    href={`/store/kategori/${product.kategori_id}`}
+                    href={`/store/produk?kategori=${product.kategori_id}`}
                   >
                     {product.nama_kategori}
                   </Link>
@@ -187,9 +189,14 @@ export default function StoreProductPage() {
                   >
                     {product.NamaItem}
                   </h1>
-                  <Badge variant={product.Status === "tersedia" ? "secondary" : "outline"}>
-                    {product.Status === "tersedia" ? "Tersedia" : "Stok habis"}
+                  <Badge variant={isAvailable ? "secondary" : "outline"}>
+                    {isAvailable ? "Tersedia" : "Stok habis"}
                   </Badge>
+                  {product.Stok !== undefined && product.Stok !== null ? (
+                    <span className="text-xs text-muted-foreground">
+                      Stok: <strong className="text-foreground">{product.Stok}</strong>
+                    </span>
+                  ) : null}
                 </div>
                 {product.Merek ? (
                   <p className="text-sm text-muted-foreground">
@@ -207,7 +214,7 @@ export default function StoreProductPage() {
                 </div>
                 <Button
                   className="h-11 w-full sm:w-fit"
-                  disabled={product.Status !== "tersedia" || isAdding}
+                  disabled={!isAvailable || isAdding}
                   onClick={() => void handleAddToCart()}
                 >
                   {isAdding ? (
@@ -215,7 +222,7 @@ export default function StoreProductPage() {
                   ) : (
                     <>
                       <Plus aria-hidden="true" data-icon="inline-start" />
-                      Tambah ke keranjang
+                      {isAvailable ? "Tambah ke keranjang" : "Stok habis"}
                     </>
                   )}
                 </Button>

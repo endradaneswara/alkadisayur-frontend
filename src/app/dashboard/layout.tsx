@@ -21,6 +21,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/dashboard/penjualan": "Penjualan",
   "/dashboard/pesanan": "Pesanan",
   "/dashboard/produk": "Produk",
+  "/dashboard/ulasan": "Ulasan Pelanggan",
   "/dashboard/user": "Manajemen Akun",
 };
 

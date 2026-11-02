@@ -7,15 +7,19 @@ import { useQuery } from "@tanstack/react-query";
 import { ChartPenjualan } from "@/components/chart-area-interactive";
 import { PesananTable } from "@/components/pesanan-table";
 import { SectionCards } from "@/components/section-cards";
+import { UlasanTable } from "@/components/ulasan-table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
 import { queryKeys } from "@/lib/query-keys";
 import { getErrorMessage } from "@/lib/store-catalog";
 import { getDashboard } from "@/services/dashboardService";
 import type { RentangGrafik } from "@/types";
 
 export default function Page() {
+  const { currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === "superAdmin";
   const [rentang, setRentang] = React.useState<RentangGrafik>("7h");
 
   const dashboardQuery = useQuery({
@@ -75,6 +79,8 @@ export default function Page() {
           </div>
 
           <PesananTable />
+
+          {isSuperAdmin && <UlasanTable />}
         </div>
       </div>
     </div>

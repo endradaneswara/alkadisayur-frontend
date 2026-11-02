@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Search } from "lucide-react";
+import { ArrowRight, RotateCcw, Search } from "lucide-react";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
 import { StoreProductCard } from "@/components/store-product-card";
@@ -51,8 +52,22 @@ const emptyPagination: PaginationState = {
   total: 0,
 };
 
-export default function StoreProductsPage() {
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+function StoreProductsContent() {
+  const searchParams = useSearchParams();
+  const kategoriParam = searchParams.get("kategori") ?? searchParams.get("kategori_id");
+  const initialCategory = kategoriParam ? Number(kategoriParam) : null;
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(
+    initialCategory && !isNaN(initialCategory) ? initialCategory : null
+  );
+
+  useEffect(() => {
+    const param = searchParams.get("kategori") ?? searchParams.get("kategori_id");
+    const catId = param ? Number(param) : null;
+    if (catId && !isNaN(catId)) {
+      setSelectedCategory(catId);
+    }
+  }, [searchParams]);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
 
@@ -267,13 +282,13 @@ export default function StoreProductsPage() {
             </p>
             {selectedCategory !== null ? (
               <Button
-                nativeButton={false}
-                render={<Link href="/store/kategori" />}
+                onClick={() => selectCategory(null)}
                 size="sm"
                 variant="ghost"
+                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
               >
-                Jelajahi semua kategori
-                <ArrowRight aria-hidden="true" data-icon="inline-end" />
+                <RotateCcw aria-hidden="true" className="size-3.5" />
+                Reset filter kategori
               </Button>
             ) : null}
           </div>
@@ -384,5 +399,13 @@ export default function StoreProductsPage() {
       </main>
       <StoreFooter />
     </div>
+  );
+}
+
+export default function StoreProductsPage() {
+  return (
+    <Suspense fallback={null}>
+      <StoreProductsContent />
+    </Suspense>
   );
 }

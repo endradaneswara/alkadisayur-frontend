@@ -118,13 +118,13 @@ const EMPTY_FORM: BarangFormState = {
   SKU: "",
   NamaItem: "",
   Merek: "",
-  Stok: "",
+  Stok: "0",
   Rak: "",
   TipeItem: "",
   HargaBeli: "",
   HargaJual: "",
   Keterangan: "",
-  Status: "tersedia",
+  Status: "tidak_tersedia",
 };
 
 function barangToForm(b: Barang): BarangFormState {
@@ -141,7 +141,7 @@ function barangToForm(b: Barang): BarangFormState {
     HargaBeli: String(b.HargaBeli),
     HargaJual: String(b.HargaJual),
     Keterangan: b.Keterangan ?? "",
-    Status: b.Status,
+    Status: Number(b.Stok) === 0 ? "tidak_tersedia" : "tersedia",
   };
 }
 
@@ -151,7 +151,7 @@ function StatusBadge({ status }: { status: StatusBarang }) {
       variant={status === "tersedia" ? "default" : "outline"}
       className="text-[11px]"
     >
-      {status === "tersedia" ? "Tersedia" : "Tidak Tersedia"}
+      {status === "tersedia" ? "Tersedia" : "Habis"}
     </Badge>
   );
 }
@@ -291,6 +291,9 @@ function ProdukContent() {
     try {
       let payload: BarangPayload | FormData;
 
+      const stokNum = Number(form.Stok) || 0;
+      const statusVal: StatusBarang = stokNum === 0 ? "tidak_tersedia" : "tersedia";
+
       if (fotoFile) {
         const fd = new FormData();
         fd.append("kategori_id", form.kategori_id);
@@ -305,7 +308,7 @@ function ProdukContent() {
         fd.append("HargaBeli", form.HargaBeli || "0");
         fd.append("HargaJual", form.HargaJual);
         fd.append("Keterangan", form.Keterangan);
-        fd.append("Status", form.Status);
+        fd.append("Status", statusVal);
         fd.append("Foto", fotoFile);
         payload = fd;
       } else {
@@ -316,13 +319,13 @@ function ProdukContent() {
           SKU: form.SKU,
           NamaItem: form.NamaItem,
           Merek: form.Merek || null,
-          Stok: Number(form.Stok) || 0,
+          Stok: stokNum,
           Rak: form.Rak || null,
           TipeItem: form.TipeItem || null,
           HargaBeli: Number(form.HargaBeli) || 0,
           HargaJual: Number(form.HargaJual),
           Keterangan: form.Keterangan || null,
-          Status: form.Status,
+          Status: statusVal,
         };
       }
 
@@ -635,7 +638,7 @@ function ProdukContent() {
                         <SelectItem value="semua">Semua Status</SelectItem>
                         <SelectItem value="tersedia">Tersedia</SelectItem>
                         <SelectItem value="tidak_tersedia">
-                          Tidak Tersedia
+                          Habis
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -804,7 +807,7 @@ function ProdukContent() {
                                   {formatRupiah(barang.HargaJual)}
                                 </TableCell>
                                 <TableCell>
-                                  <StatusBadge status={barang.Status} />
+                                  <StatusBadge status={barang.Stok === 0 ? "tidak_tersedia" : "tersedia"} />
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center justify-center gap-1">
@@ -1003,7 +1006,7 @@ function ProdukContent() {
                       </span>
                     ),
                   },
-                  { label: "Status", value: <StatusBadge status={editTarget.Status} /> },
+                  { label: "Status", value: <StatusBadge status={editTarget.Stok === 0 ? "tidak_tersedia" : "tersedia"} /> },
                   {
                     label: "Harga Beli",
                     value: formatRupiah(editTarget.HargaBeli),
@@ -1223,7 +1226,14 @@ function ProdukContent() {
                     min="0"
                     placeholder="0"
                     value={form.Stok}
-                    onChange={(e) => setFormField("Stok", e.target.value)}
+                    onChange={(e) => {
+                      const newStok = e.target.value;
+                      setFormField("Stok", newStok);
+                      const stokNum = Number(newStok);
+                      if (newStok !== "" && !isNaN(stokNum)) {
+                        setFormField("Status", stokNum === 0 ? "tidak_tersedia" : "tersedia");
+                      }
+                    }}
                     disabled={isSaving}
                   />
                 </div>
@@ -1271,7 +1281,7 @@ function ProdukContent() {
                   <SelectContent>
                     <SelectItem value="tersedia">Tersedia</SelectItem>
                     <SelectItem value="tidak_tersedia">
-                      Tidak Tersedia
+                      Habis
                     </SelectItem>
                   </SelectContent>
                 </Select>

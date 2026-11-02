@@ -30,3 +30,13 @@ export function getErrorMessage(error: unknown): string {
     ? error.message
     : "Terjadi kesalahan saat menghubungi toko.";
 }
+
+export function isProductAvailable(product: {
+  Stok?: number | null;
+  Status?: string;
+}): boolean {
+  if (product.Stok !== undefined && product.Stok !== null) {
+    return Number(product.Stok) > 0;
+  }
+  return product.Status === "tersedia";
+}

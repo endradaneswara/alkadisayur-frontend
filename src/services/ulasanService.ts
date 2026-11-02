@@ -7,8 +7,14 @@ export interface UlasanPayload {
   komentar?: string | null;
 }
 
+export interface UlasanFilterParams extends PaginationParams {
+  rating?: number | null;
+  search?: string | null;
+  per_page?: number | null;
+}
+
 export function listUlasan(
-  params?: PaginationParams,
+  params?: PaginationParams | UlasanFilterParams,
 ): Promise<ResponsApiPaginated<Ulasan>> {
   return requestPaginated<Ulasan>('/ulasan', params);
 }

@@ -101,7 +101,7 @@ export function AppSidebar({
       },
       {
         name: "Ulasan",
-        url: "/store/akun/ulasan",
+        url: "/dashboard/ulasan",
         icon: <StarIcon />,
       },
     ];

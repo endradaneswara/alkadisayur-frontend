@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useCart } from "@/hooks/useCart";
 import { hasAuthSession } from "@/services/api";
-import { getErrorMessage, getProductImageUrl, formatRupiah } from "@/lib/store-catalog";
+import { getErrorMessage, getProductImageUrl, formatRupiah, isProductAvailable } from "@/lib/store-catalog";
 import type { BarangCustomer } from "@/types";
 
 function formatCategory(name?: string | null): string {
@@ -24,7 +24,7 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackIsError, setFeedbackIsError] = useState(false);
   const { addItem, isAdding } = useCart();
-  const isAvailable = product.Status === "tersedia";
+  const isAvailable = isProductAvailable(product);
 
   async function handleAddToCart(): Promise<void> {
     if (!hasAuthSession()) {

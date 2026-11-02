@@ -28,6 +28,7 @@ import { StoreNavbar } from "@/components/store-navbar";
 import { StoreShowcase } from "@/components/store-showcase";
 import { useCart } from "@/hooks/useCart";
 import { queryKeys } from "@/lib/query-keys";
+import { isProductAvailable } from "@/lib/store-catalog";
 import { API_BASE_URL, hasAuthSession } from "@/services/api";
 import { listBarang } from "@/services/barangService";
 import { listKategori } from "@/services/kategoriService";
@@ -101,8 +102,8 @@ export default function StoreLandingPage() {
     ? getErrorMessage(productsQuery.error)
     : null;
 
-  const availableProducts = products.filter(
-    (product) => product.Status === "tersedia",
+  const availableProducts = products.filter((product) =>
+    isProductAvailable(product),
   );
   const featuredProducts = availableProducts
     .filter(
@@ -256,11 +257,11 @@ export default function StoreLandingPage() {
                 </Button>
                 <Button
                   nativeButton={false}
-                  render={<Link href="/store/kategori" />}
+                  render={<Link href="/store/produk" />}
                   size="sm"
                   variant="outline"
                 >
-                  Semua kategori
+                  Semua produk
                 </Button>
               </div>
             </div>

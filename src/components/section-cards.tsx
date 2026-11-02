@@ -55,7 +55,7 @@ export function SectionCards({ dashboard }: { dashboard: Dashboard | null }) {
       nilai: String(ringkasan?.total_produk ?? 0),
       ikon: <PackageIcon className="size-5" />,
       footerUtama: `${dashboard?.stok.stok_menipis ?? 0} stok menipis`,
-      footerKeterangan: `${dashboard?.stok.produk_tidak_tersedia ?? 0} tidak tersedia`,
+      footerKeterangan: `${dashboard?.stok.produk_tidak_tersedia ?? 0} habis`,
     },
     {
       judul: "Total Kategori",
