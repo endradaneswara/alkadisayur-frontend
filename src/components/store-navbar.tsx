@@ -106,7 +106,7 @@ export function StoreNavbar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-black/10 bg-white/40 backdrop-blur-md",
+        "sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-md",
         className,
       )}
     >
@@ -132,7 +132,7 @@ export function StoreNavbar({
           {storeLinks.map((link) => (
             <Link
               key={link.href}
-              className="text-sm font-medium text-green-950 transition-colors hover:text-green-700 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-green-800"
+              className="text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
               href={link.href}
             >
               {link.label}

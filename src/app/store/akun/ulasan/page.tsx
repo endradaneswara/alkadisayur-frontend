@@ -47,7 +47,7 @@ export default function ReviewsPage() {
 
   useEffect(() => {
     if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
+      router.replace("/store");
     }
   }, [router]);
 
@@ -176,13 +176,18 @@ export default function ReviewsPage() {
                   <CardContent className="p-6 space-y-5">
                     {/* Rating bintang besar */}
                     <div className="flex flex-col items-center gap-3 py-4">
-                      <div className="flex items-center gap-1.5">
+                      <div
+                        aria-label={`Rating ${ownReview.rating} dari 5`}
+                        className="flex items-center gap-1.5"
+                        role="img"
+                      >
                         {Array.from({ length: 5 }, (_, i) => (
                           <Star
+                            aria-hidden="true"
                             key={i}
                             className={`size-10 transition-colors ${
                               i < ownReview.rating
-                                ? "fill-amber-400 text-amber-400"
+                                ? "fill-primary text-primary"
                                 : "text-muted-foreground/20"
                             }`}
                           />
@@ -267,7 +272,11 @@ export default function ReviewsPage() {
                       <p className="mb-3 text-sm font-semibold text-foreground">
                         Berikan Penilaian
                       </p>
-                      <div className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-muted/20 p-4">
+                      <div
+                        aria-label={`Pilih rating: ${displayRating} dari 5`}
+                        className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-muted/20 p-4"
+                        role="radiogroup"
+                      >
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
@@ -279,10 +288,11 @@ export default function ReviewsPage() {
                             aria-label={`${star} bintang`}
                           >
                             <Star
+                              aria-hidden="true"
                               className={`size-9 transition-colors ${
                                 star <= displayRating
-                                  ? "fill-amber-400 text-amber-400"
-                                  : "text-muted-foreground/30 hover:text-amber-300"
+                                  ? "fill-primary text-primary"
+                                  : "text-muted-foreground/30 hover:text-primary/60"
                               }`}
                             />
                           </button>

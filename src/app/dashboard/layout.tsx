@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
@@ -29,13 +29,20 @@ export default function DashboardLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser, isLoading, isAuthenticated } = useAuth();
 
   const isAuthorized =
     currentUser !== null &&
     ["admin", "superAdmin"].includes(currentUser.role);
 
-  if (isLoading) {
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace("/store");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) {
     return (
       <div className="flex min-h-svh gap-4 p-4">
         <Skeleton className="hidden h-[calc(100svh-2rem)] w-64 rounded-xl md:block" />
@@ -43,16 +50,6 @@ export default function DashboardLayout({
           <Skeleton className="h-12 w-full rounded-xl" />
           <Skeleton className="h-36 w-full rounded-xl" />
         </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-svh items-center justify-center p-6">
-        <p className="text-sm text-muted-foreground">
-          Sesi berakhir atau profil gagal dimuat.
-        </p>
       </div>
     );
   }

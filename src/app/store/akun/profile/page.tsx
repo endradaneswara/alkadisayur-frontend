@@ -67,7 +67,7 @@ export default function ProfilePage() {
             {/* Kartu Profil Utama Lebar Penuh */}
             <Card className="overflow-hidden border border-border/80 shadow-xs">
               {/* Cover Banner */}
-              <div className="h-32 bg-gradient-to-r from-primary/30 via-emerald-500/20 to-primary/10 sm:h-40" />
+              <div className="h-32 bg-gradient-to-r from-primary/30 via-primary/15 to-primary/5 sm:h-40" />
 
               <div className="relative px-6 pb-6 sm:px-8">
                 {/* Avatar Mengambang */}
@@ -180,7 +180,7 @@ export default function ProfilePage() {
                   className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-5 transition-all duration-200 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <ClipboardList className="size-6" />
                     </div>
                     <div>
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                   className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-5 transition-all duration-200 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-secondary/30 text-primary">
                       <MapPin className="size-6" />
                     </div>
                     <div>
@@ -216,7 +216,7 @@ export default function ProfilePage() {
                   className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-5 transition-all duration-200 hover:border-primary hover:shadow-md"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                    <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <MessageSquare className="size-6" />
                     </div>
                     <div>

@@ -11,12 +11,13 @@ import {
   PackageCheck,
   PackageOpen,
   RefreshCw,
-  ShoppingBag,
   Store,
   Truck,
 } from "lucide-react";
 
 import { StoreAccountNav } from "@/components/store-account-nav";
+import { StoreEmptyState } from "@/components/store-empty-state";
+import { StoreErrorBanner } from "@/components/store-error-banner";
 import { StorePageShell } from "@/components/store-page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
+      router.replace("/store");
     }
   }, [router]);
 
@@ -136,6 +137,7 @@ export default function OrdersPage() {
                 <button
                   key={opt.value}
                   type="button"
+                  aria-pressed={isActive}
                   onClick={() => setStatusFilter(opt.value)}
                   className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                     isActive
@@ -161,21 +163,11 @@ export default function OrdersPage() {
 
         {/* Alert Error */}
         {error ? (
-          <div
-            className="mb-6 rounded-2xl border border-destructive/30 bg-destructive/5 p-5 text-sm text-destructive"
-            role="alert"
-          >
-            <div className="flex items-center justify-between gap-4">
-              <p>Gagal memuat daftar pesanan: {error}</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void ordersQuery.refetch()}
-              >
-                Coba Lagi
-              </Button>
-            </div>
-          </div>
+          <StoreErrorBanner
+            className="mb-6"
+            error={error}
+            onRetry={() => void ordersQuery.refetch()}
+          />
         ) : null}
 
         {/* Skeleton Loading */}
@@ -189,43 +181,24 @@ export default function OrdersPage() {
 
         {/* State Kosong (Belum ada pesanan) */}
         {!isLoading && !error && filteredOrders.length === 0 ? (
-          <Card className="border border-border/80 bg-card/60 backdrop-blur-xs">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center sm:py-20">
-              <div className="flex size-20 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-                <PackageOpen aria-hidden="true" className="size-10" />
-              </div>
-              <h2 className="mt-5 font-heading text-xl font-bold text-foreground sm:text-2xl">
-                {statusFilter === "semua"
-                  ? "Belum Ada Riwayat Pesanan"
-                  : `Tidak Ada Pesanan dengan Status "${orderStatusLabels[statusFilter as StatusPesanan]}"`}
-              </h2>
-              <p className="mt-2 max-w-md text-sm text-muted-foreground sm:text-base">
-                {statusFilter === "semua"
-                  ? "Anda belum melakukan pemesanan. Dapatkan sayuran segar pilihan dan kebutuhan dapur lengkap sekarang juga!"
-                  : "Coba ganti filter status di atas untuk melihat pesanan Anda yang lain."}
-              </p>
-              <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-                <Button
-                  nativeButton={false}
-                  render={<Link href="/store/produk" />}
-                  size="lg"
-                  className="gap-2"
-                >
-                  <ShoppingBag className="size-4" />
-                  Mulai Belanja Segar
-                </Button>
-                {statusFilter !== "semua" ? (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setStatusFilter("semua")}
-                  >
-                    Tampilkan Semua Pesanan
-                  </Button>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
+          <StoreEmptyState
+            action={{
+              label: "Mulai Belanja Segar",
+              onClick: () => router.push("/store/produk"),
+            }}
+            className="border border-border/80 bg-card/60 backdrop-blur-xs"
+            description={
+              statusFilter === "semua"
+                ? "Anda belum melakukan pemesanan. Dapatkan sayuran segar pilihan dan kebutuhan dapur lengkap sekarang juga!"
+                : "Coba ganti filter status di atas untuk melihat pesanan Anda yang lain."
+            }
+            icon={PackageOpen}
+            title={
+              statusFilter === "semua"
+                ? "Belum Ada Riwayat Pesanan"
+                : `Tidak Ada Pesanan dengan Status "${orderStatusLabels[statusFilter as StatusPesanan]}"`
+            }
+          />
         ) : null}
 
         {/* Daftar Kartu Pesanan Lebar Penuh */}
@@ -257,7 +230,7 @@ export default function OrdersPage() {
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                       {order.metode === "pesan_antar" ? (
                         <>
-                          <Truck className="size-3.5 text-emerald-600" />
+                          <Truck className="size-3.5 text-primary" />
                           <span>Pesan Antar</span>
                         </>
                       ) : (

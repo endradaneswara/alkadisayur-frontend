@@ -34,6 +34,13 @@ export function clearAuthSession(): void {
   }
 }
 
+export function handleSessionExpired(): void {
+  clearAuthSession();
+  if (typeof window !== "undefined") {
+    window.location.replace("/store");
+  }
+}
+
 async function getCsrfToken(): Promise<string> {
   const response = await fetch(`${API_ORIGIN}/sanctum/csrf-cookie`, {
     credentials: "include",
@@ -117,7 +124,7 @@ export async function request<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      clearAuthSession();
+      handleSessionExpired();
     }
 
     const error = getErrorMessage(
@@ -166,7 +173,7 @@ export async function requestFile(path: string): Promise<Blob> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      clearAuthSession();
+      handleSessionExpired();
     }
 
     const error = getErrorMessage(

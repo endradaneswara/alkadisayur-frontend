@@ -126,9 +126,18 @@ export function SignupForm({
                   autoComplete="name"
                   required
                   aria-invalid={Boolean(fieldErrors.name)}
+                  aria-describedby={
+                    fieldErrors.name ? "name-error" : undefined
+                  }
                 />
                 {fieldErrors.name?.[0] ? (
-                  <p className="text-sm text-destructive">{fieldErrors.name[0]}</p>
+                  <p
+                    id="name-error"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
+                    {fieldErrors.name[0]}
+                  </p>
                 ) : null}
               </Field>
               <Field data-invalid={Boolean(fieldErrors.email)}>
@@ -142,9 +151,18 @@ export function SignupForm({
                   autoComplete="email"
                   required
                   aria-invalid={Boolean(fieldErrors.email)}
+                  aria-describedby={
+                    fieldErrors.email ? "email-error" : undefined
+                  }
                 />
                 {fieldErrors.email?.[0] ? (
-                  <p className="text-sm text-destructive">{fieldErrors.email[0]}</p>
+                  <p
+                    id="email-error"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
+                    {fieldErrors.email[0]}
+                  </p>
                 ) : (
                   <FieldDescription>
                     Kami akan menggunakan ini untuk menghubungi Anda.
@@ -162,9 +180,18 @@ export function SignupForm({
                   autoComplete="new-password"
                   required
                   aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={
+                    fieldErrors.password ? "password-error" : undefined
+                  }
                 />
                 {fieldErrors.password?.[0] ? (
-                  <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
+                  <p
+                    id="password-error"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
+                    {fieldErrors.password[0]}
+                  </p>
                 ) : (
                   <FieldDescription>
                     Harus memiliki setidaknya 8 karakter.
@@ -185,9 +212,18 @@ export function SignupForm({
                   autoComplete="new-password"
                   required
                   aria-invalid={Boolean(fieldErrors.password_confirmation)}
+                  aria-describedby={
+                    fieldErrors.password_confirmation
+                      ? "password-confirmation-error"
+                      : undefined
+                  }
                 />
                 {fieldErrors.password_confirmation?.[0] ? (
-                  <p className="text-sm text-destructive">
+                  <p
+                    id="password-confirmation-error"
+                    role="alert"
+                    className="text-sm text-destructive"
+                  >
                     {fieldErrors.password_confirmation[0]}
                   </p>
                 ) : (

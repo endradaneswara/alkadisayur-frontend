@@ -141,7 +141,7 @@ export default function ContactPage() {
 
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Button
-                  className="h-11 bg-emerald-600 hover:bg-emerald-700 text-white px-5"
+                  className="h-11 bg-primary hover:bg-primary/90 text-primary-foreground px-5"
                   nativeButton={false}
                   render={
                     <a
@@ -172,7 +172,7 @@ export default function ContactPage() {
         <section className="mx-auto max-w-[1536px] px-4 py-16 sm:px-6 sm:py-20 lg:px-10 xl:px-12">
           <div className="grid gap-6 md:grid-cols-3">
             <Card className="flex flex-col border border-border p-6 transition-all hover:border-primary hover:shadow-md">
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600">
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <MessageCircle className="size-6" />
               </span>
               <h3 className="mt-5 font-heading text-xl font-bold">
@@ -184,7 +184,7 @@ export default function ContactPage() {
               </p>
               <div className="mt-auto pt-6 border-t border-border">
                 <a
-                  className="block text-lg font-bold text-emerald-600 hover:underline"
+                  className="block text-lg font-bold text-primary hover:underline"
                   href="https://wa.me/6281215770290"
                   rel="noreferrer"
                   target="_blank"
@@ -224,7 +224,7 @@ export default function ContactPage() {
             </Card>
 
             <Card className="flex flex-col border border-border p-6 transition-all hover:border-primary hover:shadow-md">
-              <span className="flex size-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600">
+              <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <Clock className="size-6" />
               </span>
               <h3 className="mt-5 font-heading text-xl font-bold">
@@ -261,7 +261,7 @@ export default function ContactPage() {
         <section
           id="formulir-pesan"
           aria-labelledby="form-section-title"
-          className="border-y border-border bg-card py-16 sm:py-20 lg:py-24"
+          className="border-y border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24"
         >
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
@@ -283,7 +283,7 @@ export default function ContactPage() {
 
                 <div className="mt-8 space-y-4">
                   <div className="flex items-start gap-3 rounded-2xl border border-border bg-background p-4">
-                    <CheckCircle2 className="mt-1 size-5 shrink-0 text-emerald-600" />
+                    <CheckCircle2 className="mt-1 size-5 shrink-0 text-primary" />
                     <div>
                       <h4 className="text-sm font-semibold">Tanggapan Cepat</h4>
                       <p className="text-xs text-muted-foreground">
@@ -343,7 +343,7 @@ export default function ContactPage() {
               <div className="rounded-3xl border border-border bg-background p-6 sm:p-10 shadow-lg">
                 {formSubmitted ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <span className="flex size-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+                    <span className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <CheckCircle2 className="size-8" />
                     </span>
                     <h3 className="mt-4 font-heading text-2xl font-bold">
@@ -355,7 +355,7 @@ export default function ContactPage() {
                     </p>
                     <div className="mt-6 flex flex-wrap justify-center gap-3">
                       <Button
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         onClick={handleSendViaWhatsApp}
                       >
                         <MessageCircle aria-hidden="true" data-icon="inline-start" />
@@ -441,7 +441,7 @@ export default function ContactPage() {
 
                     <div className="flex flex-col gap-3 pt-2 sm:flex-row">
                       <Button
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
                         size="lg"
                         type="button"
                         onClick={handleSendViaWhatsApp}

@@ -87,13 +87,14 @@ const advantages = [
 
 function StarRating({ rating }: { rating: number }) {
   return (
-    <div className="flex items-center gap-0.5">
+    <div aria-label={`Rating ${rating} dari 5`} className="flex items-center gap-0.5" role="img">
       {Array.from({ length: 5 }, (_, i) => (
         <Star
+          aria-hidden="true"
           key={i}
           className={`size-4 ${
             i < rating
-              ? "fill-amber-400 text-amber-400"
+              ? "fill-primary text-primary"
               : "text-muted-foreground/30"
           }`}
         />
@@ -198,7 +199,7 @@ export default function TentangKamiPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-8 text-white">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-emerald-300">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-secondary">
                     Dedikasi Kami
                   </span>
                   <h3 className="mt-1 font-heading text-2xl font-bold">
@@ -215,7 +216,7 @@ export default function TentangKamiPage() {
         </section>
 
         {/* STATISTIK */}
-        <section className="border-b border-border bg-card py-10 sm:py-14">
+        <section className="border-b border-border bg-background dark:bg-secondary py-10 sm:py-14">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
               {stats.map((stat) => (
@@ -308,7 +309,7 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card py-16 sm:py-20 lg:py-24">
+        <section className="border-y border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -324,7 +325,7 @@ export default function TentangKamiPage() {
             </div>
 
             <div className="mt-12 grid gap-8 lg:grid-cols-2">
-              <div className="flex flex-col rounded-3xl border border-border bg-background p-8 sm:p-10">
+              <div className="flex flex-col rounded-3xl border border-border bg-card p-8 sm:p-10">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Sparkles className="size-6" />
                 </span>
@@ -342,7 +343,7 @@ export default function TentangKamiPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col rounded-3xl border border-border bg-background p-8 sm:p-10">
+              <div className="flex flex-col rounded-3xl border border-border bg-card p-8 sm:p-10">
                 <span className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Users className="size-6" />
                 </span>
@@ -426,7 +427,7 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        <section className="border-t border-border bg-card py-16 sm:py-20 lg:py-24">
+        <section className="border-t border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -445,7 +446,7 @@ export default function TentangKamiPage() {
               {advantages.map((adv, index) => (
                 <div
                   key={adv.title}
-                  className="flex flex-col rounded-2xl border border-border bg-background p-6 transition-colors hover:border-primary"
+                  className="flex flex-col rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary"
                 >
                   <span className="font-heading text-3xl font-extrabold text-primary/40">
                     0{index + 1}
@@ -464,7 +465,7 @@ export default function TentangKamiPage() {
 
         <section
           aria-labelledby="reviews-title"
-          className="overflow-hidden border-t border-border bg-background py-16 sm:py-20 lg:py-24"
+          className="overflow-hidden border-t border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24"
         >
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="flex flex-wrap items-end justify-between gap-6">
@@ -487,8 +488,8 @@ export default function TentangKamiPage() {
               <div className="flex items-center gap-6">
                 {!isLoadingReviews && reviews.length > 0 && (
                   <div className="hidden items-center gap-3 sm:flex">
-                    <div className="flex size-14 items-center justify-center rounded-2xl bg-amber-500/10">
-                      <Star className="size-7 fill-amber-400 text-amber-400" />
+                    <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10">
+                      <Star className="size-7 fill-primary text-primary" />
                     </div>
                     <div>
                       <p className="font-heading text-2xl font-extrabold text-foreground">

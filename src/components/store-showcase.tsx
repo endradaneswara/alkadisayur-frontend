@@ -4,15 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  Maximize2,
-  Pause,
-  Play,
-  Sparkles,
-  Store,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -217,62 +210,6 @@ export function StoreShowcase() {
               </span>
             </div>
           </button>
-        </div>
-
-        <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <div className="flex items-center gap-2 rounded-full border border-border/80 bg-card p-1.5 shadow-md backdrop-blur-md">
-            <button
-              aria-label={isAutoPlaying ? "Jeda rotasi otomatis" : "Mulai rotasi otomatis"}
-              className="flex size-9 items-center justify-center rounded-full bg-secondary/40 text-primary transition-colors hover:bg-secondary"
-              onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-              type="button"
-            >
-              {isAutoPlaying ? (
-                <Pause className="size-4" />
-              ) : (
-                <Play className="size-4 ml-0.5" />
-              )}
-            </button>
-
-            <button
-              aria-label="Toko sebelumnya"
-              className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary/40"
-              onClick={prevSlide}
-              type="button"
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-
-            <div className="flex items-center gap-1 px-1">
-              {STORE_SHOWCASE_ITEMS.map((item, index) => {
-                const isActive = index === activeIndex;
-                return (
-                  <button
-                    aria-label={`Tampilkan ${item.tag}`}
-                    className={`relative rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-300 ${
-                      isActive
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:bg-secondary/30 hover:text-foreground"
-                    }`}
-                    key={item.id}
-                    onClick={() => setActiveIndex(index)}
-                    type="button"
-                  >
-                    <span>{item.tag}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <button
-              aria-label="Toko berikutnya"
-              className="flex size-9 items-center justify-center rounded-full text-foreground transition-colors hover:bg-secondary/40"
-              onClick={nextSlide}
-              type="button"
-            >
-              <ChevronRight className="size-5" />
-            </button>
-          </div>
         </div>
       </div>
     </section>

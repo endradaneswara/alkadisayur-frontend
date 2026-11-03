@@ -66,7 +66,7 @@ export default function OrderDetailPage() {
 
   useEffect(() => {
     if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
+      router.replace("/store");
     }
   }, [router]);
 
@@ -377,7 +377,7 @@ export default function OrderDetailPage() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Status:</span>
-                            <span className="font-bold capitalize text-emerald-600">
+                            <span className="font-bold capitalize text-primary">
                               {order.pembayaran.status}
                             </span>
                           </div>

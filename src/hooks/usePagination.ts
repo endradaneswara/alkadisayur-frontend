@@ -5,7 +5,7 @@ export interface UsePaginationResult {
   lastPage: number;
   total: number;
   setPage: (page: number) => void;
-  setMeta: (meta: { last_page?: number | null; total?: number | null }) => void;
+  setMeta: (meta: { last_page?: number | null; total?: number | null } | undefined | null) => void;
   goToNextPage: () => void;
   goToPreviousPage: () => void;
   canGoNext: boolean;
@@ -23,10 +23,10 @@ export function usePagination(initialPage = 1): UsePaginationResult {
   }, [lastPage]);
 
   const setMeta = React.useCallback(
-    (meta: { last_page?: number | null; total?: number | null }) => {
-      const nextLastPage = meta.last_page ?? 1;
+    (meta: { last_page?: number | null; total?: number | null } | undefined | null) => {
+      const nextLastPage = meta?.last_page ?? 1;
       setLastPageState(nextLastPage);
-      setTotalState(meta.total ?? 0);
+      setTotalState(meta?.total ?? 0);
 
       setPageState((current) => {
         if (current > nextLastPage && nextLastPage >= 1) {

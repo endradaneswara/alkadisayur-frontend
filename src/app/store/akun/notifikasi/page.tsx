@@ -36,7 +36,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
+      router.replace("/store");
     }
   }, [router]);
 

@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, MapPin, PackageCheck } from "lucide-react";
+import { ArrowLeft, MapPin, PackageCheck, ShoppingCart } from "lucide-react";
 
 import { StorePageShell } from "@/components/store-page-shell";
+import { StoreEmptyState } from "@/components/store-empty-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -52,7 +53,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
+      router.replace("/store");
     }
   }, [router]);
 
@@ -84,7 +85,7 @@ export default function CheckoutPage() {
 
   const cart = cartQuery.data ?? null;
   const addresses = addressesQuery.data ?? [];
-  const locations = locationsQuery.data ?? [];
+  const locations = Array.isArray(locationsQuery.data) ? locationsQuery.data : [];
 
   // Set default alamat/lokasi sekali saat data pertama tersedia.
   useEffect(() => {
@@ -242,14 +243,12 @@ export default function CheckoutPage() {
         ) : null}
 
         {!isLoading && !error && cart?.items.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
-              <p>Keranjang Anda kosong.</p>
-              <Button nativeButton={false} render={<Link href="/store/produk" />}>
-                Pilih produk
-              </Button>
-            </CardContent>
-          </Card>
+          <StoreEmptyState
+            action={{ label: "Pilih produk", onClick: () => router.push("/store/produk") }}
+            description="Keranjang Anda kosong."
+            icon={ShoppingCart}
+            title="Keranjang Anda kosong"
+          />
         ) : null}
 
         {!isLoading && cart && cart.items.length > 0 ? (

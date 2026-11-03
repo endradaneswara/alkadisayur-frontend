@@ -206,7 +206,7 @@ function PesananContent() {
     enabled: !isLoadingUser && currentUser?.role === "superAdmin",
   });
 
-  const lokasiList = lokasiQuery.data ?? [];
+  const lokasiList = Array.isArray(lokasiQuery.data) ? lokasiQuery.data : [];
 
   const filterParams: PesananFilterParams = { page };
   if (filterStatus !== "semua") filterParams.status = filterStatus;

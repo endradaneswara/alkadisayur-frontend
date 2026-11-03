@@ -8,12 +8,13 @@ import {
   Leaf,
   Minus,
   Plus,
-  ShoppingBag,
   ShoppingCart,
   Tag,
   Trash2,
 } from "lucide-react";
 
+import { StoreEmptyState } from "@/components/store-empty-state";
+import { StoreErrorBanner } from "@/components/store-error-banner";
 import { StorePageShell } from "@/components/store-page-shell";
 import { ConfirmDialogHost } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
@@ -41,7 +42,7 @@ export default function CartPage() {
 
   useEffect(() => {
     if (!hasAuthSession()) {
-      router.replace("/store/akun/login");
+      router.replace("/store");
     }
   }, [router]);
 
@@ -133,12 +134,7 @@ export default function CartPage() {
 
       {/* Error */}
       {error && (
-        <div className="mb-6 flex items-center justify-between gap-4 rounded-2xl border border-destructive/30 bg-destructive/5 px-5 py-4 text-sm text-destructive" role="alert">
-          <p>Keranjang gagal dimuat: {error}</p>
-          <Button onClick={refetch} size="sm" variant="outline">
-            Coba Lagi
-          </Button>
-        </div>
+        <StoreErrorBanner className="mb-6" error={error} onRetry={refetch} />
       )}
 
       {/* Loading Skeleton */}
@@ -155,26 +151,12 @@ export default function CartPage() {
 
       {/* Keranjang Kosong */}
       {!isLoading && !error && items.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-border bg-card py-20 text-center">
-          <div className="flex size-20 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-            <ShoppingCart className="size-10" />
-          </div>
-          <h2 className="mt-5 font-heading text-2xl font-bold text-foreground">
-            Keranjang Masih Kosong
-          </h2>
-          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            Temukan sayuran segar, buah pilihan, dan kebutuhan dapur terbaik di toko kami.
-          </p>
-          <Button
-            className="mt-7 gap-2"
-            nativeButton={false}
-            render={<Link href="/store/produk" />}
-            size="lg"
-          >
-            <ShoppingBag className="size-4" />
-            Mulai Belanja
-          </Button>
-        </div>
+        <StoreEmptyState
+          action={{ label: "Mulai Belanja", onClick: () => router.push("/store/produk") }}
+          description="Temukan sayuran segar, buah pilihan, dan kebutuhan dapur terbaik di toko kami."
+          icon={ShoppingCart}
+          title="Keranjang Masih Kosong"
+        />
       )}
 
       {/* Konten Keranjang */}
@@ -348,8 +330,8 @@ export default function CartPage() {
             </div>
 
             {/* Badge aman belanja */}
-            <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-xs text-emerald-700">
-              <Leaf className="size-5 shrink-0 text-emerald-500" />
+            <div className="flex items-center gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-xs text-primary">
+              <Leaf className="size-5 shrink-0 text-primary" />
               <span>
                 Semua produk dipilih langsung dari kebun mitra petani lokal kami setiap hari.
               </span>

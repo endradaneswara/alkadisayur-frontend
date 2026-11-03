@@ -127,9 +127,16 @@ export function LoginForm({
                   required
                   autoComplete="username"
                   aria-invalid={Boolean(fieldErrors.login)}
+                  aria-describedby={
+                    fieldErrors.login ? "login-error" : undefined
+                  }
                 />
                 {fieldErrors.login?.[0] ? (
-                  <p className="mt-1 text-sm text-destructive">
+                  <p
+                    id="login-error"
+                    role="alert"
+                    className="mt-1 text-sm text-destructive"
+                  >
                     {fieldErrors.login[0]}
                   </p>
                 ) : null}
@@ -152,16 +159,26 @@ export function LoginForm({
                   required
                   autoComplete="current-password"
                   aria-invalid={Boolean(fieldErrors.password)}
+                  aria-describedby={
+                    fieldErrors.password ? "password-error" : undefined
+                  }
                 />
                 {fieldErrors.password?.[0] ? (
-                  <p className="mt-1 text-sm text-destructive">
+                  <p
+                    id="password-error"
+                    role="alert"
+                    className="mt-1 text-sm text-destructive"
+                  >
                     {fieldErrors.password[0]}
                   </p>
                 ) : null}
               </Field>
               {errorMessage ? (
                 <Field>
-                  <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  <p
+                    role="alert"
+                    className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                  >
                     {errorMessage}
                   </p>
                 </Field>
@@ -171,7 +188,8 @@ export function LoginForm({
                   {isSubmitting ? "Memproses..." : "Login"}
                 </Button>
                 <FieldDescription className="text-center">
-                  Tidak memiliki akun? <a href="signup/">Sign up</a>
+                  Tidak memiliki akun?{" "}
+                  <Link href="/store/akun/signup">Sign up</Link>
                 </FieldDescription>
               </Field>
             </FieldGroup>

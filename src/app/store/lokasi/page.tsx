@@ -179,7 +179,7 @@ export default function LokasiPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                  <span className="text-xs font-semibold tracking-wider uppercase text-emerald-300">
+                  <span className="text-xs font-semibold tracking-wider uppercase text-secondary">
                     Foto Cabang
                   </span>
                   <h3 className="mt-1 font-heading text-xl font-bold sm:text-2xl">
@@ -243,7 +243,7 @@ export default function LokasiPage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-card py-16 sm:py-20">
+        <section className="border-y border-border bg-background dark:bg-secondary py-16 sm:py-20">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">

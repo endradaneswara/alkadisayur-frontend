@@ -2,155 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import {
   ArrowRight,
-  ImagePlus,
   Leaf,
-  Plus,
   ShieldCheck,
   ShoppingBasket,
   Truck,
-  X,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
 import { StoreShowcase } from "@/components/store-showcase";
-import { useCart } from "@/hooks/useCart";
-import { queryKeys } from "@/lib/query-keys";
-import { isProductAvailable } from "@/lib/store-catalog";
-import { API_BASE_URL, hasAuthSession } from "@/services/api";
-import { listBarang } from "@/services/barangService";
-import { listKategori } from "@/services/kategoriService";
-import type { BarangCustomer } from "@/types";
-
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error
-    ? error.message
-    : "Terjadi kesalahan saat menghubungi toko.";
-}
-
-function getProductImageUrl(path: string): string {
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-
-  const apiOrigin = API_BASE_URL.replace(/\/api\/?$/, "");
-  if (path.startsWith("/storage/")) {
-    return `${apiOrigin}${path}`;
-  }
-  if (path.startsWith("/")) {
-    return path;
-  }
-
-  const storagePath = path.replace(/^storage\//, "");
-  return `${apiOrigin}/storage/${storagePath}`;
-}
-
-function formatRupiah(value: string | number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(Number(value));
-}
 
 export default function StoreLandingPage() {
-  const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [addingProductIds, setAddingProductIds] = useState<number[]>([]);
-  const [failedImageIds, setFailedImageIds] = useState<number[]>([]);
-  const [cartCount, setCartCount] = useState(0);
-  const [cartFeedback, setCartFeedback] = useState<string | null>(null);
-  const [cartFeedbackIsError, setCartFeedbackIsError] = useState(false);
-
-  const { addItem } = useCart();
-
-  const categoriesQuery = useQuery({
-    queryKey: queryKeys.kategori.list({ page: 1 }),
-    queryFn: async () => {
-      const response = await listKategori({ page: 1 });
-      return response.data;
-    },
-  });
-
-  const productsQuery = useQuery({
-    queryKey: queryKeys.barang.list({ page: 1 }),
-    queryFn: async () => {
-      const response = await listBarang<BarangCustomer>({ page: 1 });
-      return response.data;
-    },
-  });
-
-  const categories = categoriesQuery.data ?? [];
-  const products = productsQuery.data ?? [];
-  const isLoadingCategories = categoriesQuery.isLoading;
-  const categoryError = categoriesQuery.error instanceof Error
-    ? getErrorMessage(categoriesQuery.error)
-    : null;
-  const productError = productsQuery.error instanceof Error
-    ? getErrorMessage(productsQuery.error)
-    : null;
-
-  const availableProducts = products.filter((product) =>
-    isProductAvailable(product),
-  );
-  const featuredProducts = availableProducts
-    .filter(
-      (product) =>
-        selectedCategory === null || product.kategori_id === selectedCategory,
-    )
-    .slice(0, 4);
-  const categoryProductCounts = new Map<number, number>();
-
-  for (const product of availableProducts) {
-    categoryProductCounts.set(
-      product.kategori_id,
-      (categoryProductCounts.get(product.kategori_id) ?? 0) + 1,
-    );
-  }
-
-  async function handleAddToCart(product: BarangCustomer): Promise<void> {
-    if (!hasAuthSession()) {
-      router.push("/store/akun/login");
-      return;
-    }
-
-    setAddingProductIds((current) => [...current, product.id]);
-    setCartFeedback(null);
-    setCartFeedbackIsError(false);
-
-    const result = await addItem(product.id, 1);
-
-    if (result) {
-      setCartCount(result.total_item);
-      setCartFeedback(`${product.NamaItem} berhasil ditambahkan ke keranjang.`);
-    } else {
-      setCartFeedback("Gagal menambahkan produk ke keranjang.");
-      setCartFeedbackIsError(true);
-    }
-
-    setAddingProductIds((current) =>
-      current.filter((productId) => productId !== product.id),
-    );
-  }
-
-  function selectCategory(categoryId: number | null): void {
-    setSelectedCategory(categoryId);
-    document
-      .getElementById("produk-unggulan")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  const cartCount = 0;
 
   return (
     <div className="store-landing min-h-screen bg-background text-foreground">
@@ -158,7 +23,27 @@ export default function StoreLandingPage() {
       <main>
         <section
           aria-labelledby="hero-title"
-          className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
+          className="flex flex-col items-center px-4 pt-12 pb-10 text-center sm:px-6 sm:pt-16 sm:pb-12 lg:px-10 lg:pt-20 lg:pb-16 xl:px-12"
+        >
+          <div className="store-enter flex max-w-3xl flex-col items-center">
+            <h1
+              className="font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl"
+              id="hero-title"
+            >
+              Segarnya alam,
+              <br />
+              <span className="text-foreground">sampai di meja Anda.</span>
+            </h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-foreground sm:text-lg sm:leading-8">
+              Temukan sayur dan kebutuhan segar pilihan untuk setiap hidangan
+              keluarga. Belanja lebih praktis, pilih sesuai kebutuhan.
+            </p>
+          </div>
+        </section>
+
+        <section
+          aria-label="Banner toko"
+          className="store-hero relative isolate mx-auto w-[calc(100%-2rem)] min-h-[400px] overflow-hidden sm:w-[calc(100%-3rem)] sm:min-h-[500px] lg:w-[calc(100%-5rem)] lg:min-h-[600px] xl:w-[calc(100%-6rem)]"
         >
           <div className="store-hero-background" aria-hidden="true">
             <Image
@@ -166,313 +51,15 @@ export default function StoreLandingPage() {
               className="object-cover"
               fill
               priority
-              sizes="100vw"
+              sizes="70vw"
               src="/background-landing2.webp"
             />
-          </div>
-          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:grid-cols-[1fr_0.92fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-24 xl:px-12">
-            <div className="store-enter flex flex-col items-start">
-            <h1
-              className="max-w-2xl font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl "
-              id="hero-title"
-            >
-              Segarnya alam,
-              <br />
-              <span className="text-foreground">sampai di meja Anda.</span>
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 sm:text-lg sm:leading-8 text-foreground">
-              Temukan sayur dan kebutuhan segar pilihan untuk setiap hidangan
-              keluarga. Belanja lebih praktis, pilih sesuai kebutuhan.
-            </p>
-            <div className="mt-8 flex flex-wrap items-center gap-3">
-              <Button
-                className="h-11 px-5"
-                nativeButton={false}
-                render={<Link href="#produk-unggulan" />}
-                size="lg"
-              >
-                Mulai belanja
-                <ArrowRight aria-hidden="true" data-icon="inline-end" />
-              </Button>
-              <Button
-                className="h-11 px-5"
-                nativeButton={false}
-                render={<Link href="/store/produk" />}
-                size="lg"
-                variant="outline"
-              >
-                Jelajahi kategori
-              </Button>
-            </div>
-          </div>
-          </div>
-        </section>
-
-        {(categoryError || productError) && (
-          <div
-            className="mx-auto mb-8 max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12"
-            role="alert"
-          >
-            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              <p className="font-semibold">Katalog belum dapat dimuat.</p>
-              <p className="mt-1">
-                {[
-                  categoryError ? `Kategori: ${categoryError}` : null,
-                  productError ? `Produk: ${productError}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <section
-          aria-labelledby="category-title"
-                  className="scroll-mt-24 bg-secondary/40 py-16 sm:py-20"
-          id="kategori"
-        >
-          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
-            <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h2
-                  className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
-                  id="category-title"
-                >
-                  Temukan jenis produk kebutuhanmu
-                </h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Temukan kebutuhan dapur dengan lebih mudah
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  nativeButton={false}
-                  render={<Link href="#produk-unggulan" />}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Lihat pilihan produk
-                  <ArrowRight aria-hidden="true" data-icon="inline-end" />
-                </Button>
-                <Button
-                  nativeButton={false}
-                  render={<Link href="/store/produk" />}
-                  size="sm"
-                  variant="outline"
-                >
-                  Semua produk
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
-              {isLoadingCategories
-                ? Array.from({ length: 6 }, (_, index) => (
-                    <div
-                      className="flex min-h-36 flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-background p-4"
-                      key={`category-skeleton-${index}`}
-                    >
-                      <Skeleton className="size-12 rounded-2xl" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  ))
-                : categories.slice(0, 6).map((category, index) => (
-                    <button
-                      aria-label={`Tampilkan produk kategori ${category.nama_kategori}`}
-                      className={`store-category-card group flex min-h-36 flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                        selectedCategory === category.id
-                          ? "border-primary bg-secondary shadow-xs"
-                          : "border-border bg-background hover:border-primary/50 hover:bg-secondary/60"
-                      }`}
-                      key={category.id}
-                      onClick={() => selectCategory(category.id)}
-                      type="button"
-                    >
-                      <span className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-card text-primary transition-all duration-300 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-xs">
-                        {index % 2 === 0 ? (
-                          <Leaf aria-hidden="true" className="size-5" />
-                        ) : (
-                          <ShoppingBasket
-                            aria-hidden="true"
-                            className="size-5"
-                          />
-                        )}
-                      </span>
-                      <span className="max-w-full truncate text-sm font-semibold text-foreground">
-                        {category.nama_kategori}
-                      </span>
-                      <span className="mt-1 text-xs text-muted-foreground">
-                        {categoryProductCounts.get(category.id) ?? 0} produk
-                      </span>
-                    </button>
-                  ))}
-              {!isLoadingCategories && categories.length === 0 ? (
-                <p className="col-span-full rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-                  Kategori akan ditampilkan di sini setelah tersedia.
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </section>
-
-        <section
-          aria-labelledby="featured-title"
-          className="scroll-mt-24 w-full bg-primary text-white py-16 sm:py-24"
-          id="produk-unggulan"
-        >
-          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
-            <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-              <div className="max-w-2xl">
-                <p className="text-xs font-semibold tracking-[0.2em] uppercase text-[#bef264]">
-                  Pilihan Eksklusif Alkadi
-                </p>
-                <h2
-                  className="mt-3 font-heading text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl"
-                  id="featured-title"
-                >
-                  Kesehatan & kesegaran keluarga dimulai dari dapur.
-                </h2>
-              </div>
-              <div className="max-w-md text-left md:text-right">
-                <p className="text-sm leading-relaxed text-white/70 sm:text-base">
-                  Sayuran pilihan bermutu tinggi yang dipetik segar setiap pagi dari kebun mitra terpercaya untuk nutrisi terbaik keluarga.
-                </p>
-                <div className="mt-4 flex items-center justify-start gap-4 md:justify-end">
-                  {selectedCategory !== null ? (
-                    <Button
-                      className="rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20"
-                      onClick={() => setSelectedCategory(null)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      Semua kategori
-                      <X aria-hidden="true" className="size-3.5 ml-1" />
-                    </Button>
-                  ) : null}
-                  <Link
-                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-white underline underline-offset-4 transition-colors hover:text-[#bef264]"
-                    href="/store/produk"
-                  >
-                    <span>Lihat Semua Produk</span>
-                    <ArrowRight aria-hidden="true" className="size-4" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {cartFeedback ? (
-              <p
-                aria-live="polite"
-                className={`mb-6 rounded-2xl border px-4 py-3 text-sm backdrop-blur-xs ${
-                  cartFeedbackIsError
-                    ? "border-destructive/40 bg-destructive/15 text-red-200"
-                    : "border-emerald-400/30 bg-emerald-950/60 text-emerald-200"
-                }`}
-                role={cartFeedbackIsError ? "alert" : "status"}
-              >
-                {cartFeedback}
-              </p>
-            ) : null}
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                {
-                  badgeType: "accent",
-                  image: "/sayur background1.webp",
-                  fallbackTitle: "Paket Sayur Daun Hijau Segar",
-                  fallbackPrice: 15000,
-                },
-                {
-                  badgeType: "subtle",
-                  image: "/sayur-background2.webp",
-                  fallbackTitle: "Brokoli & Kembang Kol Pilihan",
-                  fallbackPrice: 22000,
-                },
-                {
-                  badge: "Favorit",
-                  badgeType: "subtle",
-                  image: "/sayur-background3.webp",
-                  fallbackTitle: "Aneka Rempah & Bumbu Dapur",
-                  fallbackPrice: 18000,
-                },
-                {
-                  badgeType: "subtle",
-                  image: "/sayur background4.webp",
-                  fallbackTitle: "Wortel & Umbi Segar Organik",
-                  fallbackPrice: 20000,
-                },
-              ].map((config, index) => {
-                const product = featuredProducts[index];
-                const title = product?.NamaItem || config.fallbackTitle;
-                const price = product?.HargaJual || config.fallbackPrice;
-                const productId = product?.id;
-                const isAdding = productId ? addingProductIds.includes(productId) : false;
-
-                return (
-                  <div
-                    className="group relative flex flex-col items-center justify-between rounded-3xl border border-white/10 bg-muted-foreground p-6 text-center shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-2 hover:border-white/30 hover:shadow-2xl"
-                    key={config.image}
-                  >
-                    <h3 className="line-clamp-2 min-h-[3rem] font-heading text-lg font-semibold tracking-tight text-white transition-colors group-hover:text-[#bef264] sm:text-xl">
-                      {productId ? (
-                        <Link href={`/store/produk/${productId}`}>
-                          {title}
-                        </Link>
-                      ) : (
-                        title
-                      )}
-                    </h3>
-
-                    <div className="relative my-5 aspect-square w-full max-w-[210px] overflow-hidden rounded-2xl bg-black/25 shadow-xl ring-1 ring-white/15">
-                      <Image
-                        alt={title}
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        fill
-                        loading={index === 0 ? "eager" : "lazy"}
-                        priority={index === 0}
-                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 22vw"
-                        src={config.image}
-                      />
-                    </div>
-
-                    <Button
-                      className="mt-2 h-10 w-full max-w-[170px] rounded-full border border-white/20 bg-white/12 text-xs font-semibold text-white shadow-xs backdrop-blur-xs transition-all hover:bg-white/25 sm:text-sm"
-                      disabled={isAdding}
-                      onClick={() => {
-                        if (product) {
-                          void handleAddToCart(product);
-                        } else {
-                          router.push("/store/produk");
-                        }
-                      }}
-                      type="button"
-                    >
-                      {isAdding ? (
-                        "Menambahkan..."
-                      ) : (
-                        <>
-                          <Plus aria-hidden="true" className="size-4" />
-                          Beli Sekarang
-                        </>
-                      )}
-                    </Button>
-
-                    {/* Subtext: Starting price */}
-                    <p className="mt-3 text-xs font-medium text-white/60">
-                      Mulai dari {formatRupiah(price)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         </section>
 
         <section
           aria-labelledby="benefits-title"
-                  className="scroll-mt-24 border-y border-border bg-secondary/60 py-16 sm:py-20"
+                  className="scroll-mt-24 bg-background dark:bg-secondary py-16 sm:py-20"
           id="keunggulan"
         >
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
@@ -541,7 +128,6 @@ export default function StoreLandingPage() {
           </div>
         </section>
 
-        {/* Showcase Gerai Toko 1-6 (Seed.com style experience carousel) */}
         <StoreShowcase />
       </main>
 

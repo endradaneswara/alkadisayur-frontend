@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, Plus } from "lucide-react";
 import { StoreFooter } from "@/components/store-footer";
+import { StoreErrorBanner } from "@/components/store-error-banner";
 import { StoreNavbar } from "@/components/store-navbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -76,7 +77,7 @@ export default function StoreProductPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <StoreNavbar />
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+      <main className="mx-auto max-w-[1536px] px-4 py-8 sm:px-6 sm:py-12 lg:px-10 xl:px-12">
         <nav
           aria-label="Breadcrumb"
           className="mb-6 text-sm text-muted-foreground"
@@ -121,12 +122,7 @@ export default function StoreProductPage() {
           </p>
         ) : null}
         {error ? (
-          <p
-            className="rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive"
-            role="alert"
-          >
-            Produk belum dapat dimuat: {error}
-          </p>
+          <StoreErrorBanner error={error} />
         ) : null}
 
         {isLoading && isValidProductId ? (

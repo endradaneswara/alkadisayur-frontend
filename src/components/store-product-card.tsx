@@ -75,7 +75,7 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           <Badge
             className={`border-none px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider shadow-xs backdrop-blur-xs sm:text-[11px] ${
               isAvailable
-                ? "bg-emerald-600/90 text-white hover:bg-emerald-600"
+                ? "bg-primary/90 text-primary-foreground hover:bg-primary"
                 : "bg-destructive/90 text-white hover:bg-destructive"
             }`}
           >

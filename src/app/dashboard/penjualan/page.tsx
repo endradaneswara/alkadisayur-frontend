@@ -120,7 +120,7 @@ function PenjualanContent() {
     enabled: !isLoadingUser && isSuperAdmin,
   });
 
-  const lokasiList = lokasiQuery.data ?? [];
+  const lokasiList = Array.isArray(lokasiQuery.data) ? lokasiQuery.data : [];
 
   const filterParams = {
     page,
