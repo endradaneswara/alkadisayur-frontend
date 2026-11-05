@@ -7,15 +7,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 
 interface StoreItem {
   id: number;
   image: string;
-  title: string;
-  subtitle: string;
-  badge: string;
+  alt: string;
   tag: string;
 }
 
@@ -23,49 +19,37 @@ const STORE_SHOWCASE_ITEMS: StoreItem[] = [
   {
     id: 1,
     image: "/toko1.webp",
-    title: "Suasana Gerai Bersih & Tertata Rapi",
-    subtitle: "Pilihan sayur segar disusun higienis setiap pagi langsung dari petani mitra terpilih.",
-    badge: "Buka Setiap Hari",
+    alt: "Toko Alkadi 1",
     tag: "1",
   },
   {
     id: 2,
     image: "/toko2.webp",
-    title: "Display Sayuran Hijau & Buah Pilihan",
-    subtitle: "Kualitas optimal dengan pendingin dan sirkulasi udara terkontrol untuk menjaga kesegaran.",
-    badge: "100% Segar Alami",
+    alt: "Toko Alkadi 2",
     tag: "2",
   },
   {
     id: 3,
     image: "/toko3.webp",
-    title: "Koleksi Rempah & Bumbu Dapur Komplit",
-    subtitle: "Aneka rempah nusantara dan kebutuhan dapur sehari-hari tersedia lengkap di satu tempat.",
-    badge: "Lengkap & Praktis",
+    alt: "Toko Alkadi 3",
     tag: "3",
   },
   {
     id: 4,
     image: "/toko4.webp",
-    title: "Pelayanan Ramah & Pengalaman Nyaman",
-    subtitle: "Staf kami dengan senang hati membantu Anda memilih produk terbaik untuk sajian keluarga.",
-    badge: "Pelayanan Prima",
+    alt: "Toko Alkadi 4",
     tag: "4",
   },
   {
     id: 5,
     image: "/toko5.webp",
-    title: "Standar Mutu & Higienitas Terjamin",
-    subtitle: "Sortir berkala setiap hari menjamin produk sampai ke tangan Anda dalam kondisi prima.",
-    badge: "Kualitas Teruji",
+    alt: "Toko Alkadi 5",
     tag: "5",
   },
   {
     id: 6,
     image: "/toko6.webp",
-    title: "Armada Pengantaran Cepat Alkadi",
-    subtitle: "Layanan pesan antar tepat waktu dengan pengemasan aman menjaga kesegaran sampai rumah.",
-    badge: "Pengiriman Cepat",
+    alt: "Toko Alkadi 6",
     tag: "6",
   },
 ];
@@ -128,7 +112,7 @@ export function StoreShowcase() {
             type="button"
           >
             <Image
-              alt={STORE_SHOWCASE_ITEMS[prevIndex].title}
+              alt=" "
               className="object-cover blur-[0.5px] transition-transform duration-700 group-hover:scale-105"
               fill
               loading="lazy"
@@ -155,7 +139,7 @@ export function StoreShowcase() {
                   key={item.id}
                 >
                   <Image
-                    alt={item.title}
+                    alt={item.alt}
                     className="object-cover transition-transform duration-1000 scale-100 hover:scale-[1.02]"
                     fill
                     loading={index === 0 ? 'eager' : 'lazy'}
@@ -176,15 +160,6 @@ export function StoreShowcase() {
                     Alkadi Fresh Market
                   </span>
                 </div>
-
-                <div className="max-w-md text-left sm:text-right">
-                  <h3 className="font-heading text-lg font-bold tracking-tight text-white drop-shadow-md sm:text-2xl">
-                    {current.title}
-                  </h3>
-                  <p className="mt-1 line-clamp-2 text-xs text-white/80 drop-shadow-xs sm:text-sm">
-                    {current.subtitle}
-                  </p>
-                </div>
               </div>
             </div>
           </div>
@@ -196,7 +171,7 @@ export function StoreShowcase() {
             type="button"
           >
             <Image
-              alt={STORE_SHOWCASE_ITEMS[nextIndex].title}
+              alt={STORE_SHOWCASE_ITEMS[nextIndex].alt}
               className="object-cover blur-[0.5px] transition-transform duration-700 group-hover:scale-105"
               fill
               loading="lazy"
