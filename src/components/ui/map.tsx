@@ -263,7 +263,9 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   const isControlled = viewport !== undefined && onViewportChange !== undefined;
 
   const onViewportChangeRef = useRef(onViewportChange);
-  onViewportChangeRef.current = onViewportChange;
+  useEffect(() => {
+    onViewportChangeRef.current = onViewportChange;
+  }, [onViewportChange]);
 
   const stableStyles = useStableValue(styles);
 
@@ -379,7 +381,6 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
   useEffect(() => {
     if (!mapInstance || !pendingStyle) return;
 
-    setPendingStyle(null);
     styleSwapInFlightRef.current = true;
     // Full reload (no diff) so `style.load` fires deterministically. A
     // successful diff would never fire it, leaving isStyleLoaded stuck false.
@@ -467,66 +468,59 @@ function MapMarker({
 }: MapMarkerProps) {
   const { map } = useMap();
 
-  const callbacksRef = useRef({
-    onClick,
-    onMouseEnter,
-    onMouseLeave,
-    onDragStart,
-    onDrag,
-    onDragEnd,
-  });
-  callbacksRef.current = {
-    onClick,
-    onMouseEnter,
-    onMouseLeave,
-    onDragStart,
-    onDrag,
-    onDragEnd,
-  };
+  const marker = useMemo(
+    () =>
+      new MapLibreGL.Marker({
+        ...markerOptions,
+        element: document.createElement("div"),
+        draggable,
+      }).setLngLat([longitude, latitude]),
+    // Marker instance is created once; the props are applied in the sync effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
-  const marker = useMemo(() => {
-    const markerInstance = new MapLibreGL.Marker({
-      ...markerOptions,
-      element: document.createElement("div"),
-      draggable,
-    }).setLngLat([longitude, latitude]);
-
-    const handleClick = (e: MouseEvent) => callbacksRef.current.onClick?.(e);
-    const handleMouseEnter = (e: MouseEvent) =>
-      callbacksRef.current.onMouseEnter?.(e);
-    const handleMouseLeave = (e: MouseEvent) =>
-      callbacksRef.current.onMouseLeave?.(e);
-
-    markerInstance.getElement()?.addEventListener("click", handleClick);
-    markerInstance
-      .getElement()
-      ?.addEventListener("mouseenter", handleMouseEnter);
-    markerInstance
-      .getElement()
-      ?.addEventListener("mouseleave", handleMouseLeave);
-
+  useEffect(() => {
+    const element = marker.getElement();
+    if (!element) return;
+    const handleClick = (event: MouseEvent) => onClick?.(event);
+    const handleMouseEnter = (event: MouseEvent) => onMouseEnter?.(event);
+    const handleMouseLeave = (event: MouseEvent) => onMouseLeave?.(event);
     const handleDragStart = () => {
-      const lngLat = markerInstance.getLngLat();
-      callbacksRef.current.onDragStart?.({ lng: lngLat.lng, lat: lngLat.lat });
+      const { lng, lat } = marker.getLngLat();
+      onDragStart?.({ lng, lat });
     };
     const handleDrag = () => {
-      const lngLat = markerInstance.getLngLat();
-      callbacksRef.current.onDrag?.({ lng: lngLat.lng, lat: lngLat.lat });
+      const { lng, lat } = marker.getLngLat();
+      onDrag?.({ lng, lat });
     };
     const handleDragEnd = () => {
-      const lngLat = markerInstance.getLngLat();
-      callbacksRef.current.onDragEnd?.({ lng: lngLat.lng, lat: lngLat.lat });
+      const { lng, lat } = marker.getLngLat();
+      onDragEnd?.({ lng, lat });
     };
-
-    markerInstance.on("dragstart", handleDragStart);
-    markerInstance.on("drag", handleDrag);
-    markerInstance.on("dragend", handleDragEnd);
-
-    return markerInstance;
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+    element.addEventListener("click", handleClick);
+    element.addEventListener("mouseenter", handleMouseEnter);
+    element.addEventListener("mouseleave", handleMouseLeave);
+    marker.on("dragstart", handleDragStart);
+    marker.on("drag", handleDrag);
+    marker.on("dragend", handleDragEnd);
+    return () => {
+      element.removeEventListener("click", handleClick);
+      element.removeEventListener("mouseenter", handleMouseEnter);
+      element.removeEventListener("mouseleave", handleMouseLeave);
+      marker.off("dragstart", handleDragStart);
+      marker.off("drag", handleDrag);
+      marker.off("dragend", handleDragEnd);
+    };
+  }, [
+    marker,
+    onClick,
+    onMouseEnter,
+    onMouseLeave,
+    onDragStart,
+    onDrag,
+    onDragEnd,
+  ]);
   useEffect(() => {
     if (!map) return;
 
@@ -1037,7 +1031,9 @@ function MapPopup({
 }: MapPopupProps) {
   const { map } = useMap();
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
   const container = useMemo(() => document.createElement("div"), []);
   const { offset, maxWidth } = popupOptions;
 
@@ -1321,7 +1317,6 @@ function MapRoute({
   const id = propId ?? autoId;
   const sourceId = `route-source-${id}`;
   const layerId = `route-layer-${id}`;
-  const [ready, setReady] = useState(false);
 
   // Callers often pass `data?.coordinates ?? []`, a fresh array each render.
   // Collapse empties to one shared instance so nothing downstream re-runs.
@@ -1332,7 +1327,7 @@ function MapRoute({
   const resolvedWidth = active ? (activeWidth ?? width) : width;
   const resolvedOpacity = active ? (activeOpacity ?? opacity) : opacity;
   const resolvedDashArray = active ? (activeDashArray ?? dashArray) : dashArray;
-
+  const ready = isLoaded && map !== null;
   const measure = useMemo(() => measureRoute(coordinates), [coordinates]);
   const traveled = useMemo(
     () =>
@@ -1396,13 +1391,7 @@ function MapRoute({
       },
       resolveBeforeId(map, beforeId),
     );
-
-    // Children add their layers once this is set, which keeps them above the
-    // base line: child effects would otherwise run before this one.
-    setReady(true);
-
     return () => {
-      setReady(false);
       try {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
         if (map.getSource(sourceId)) map.removeSource(sourceId);
@@ -1830,7 +1819,9 @@ function MapGeoJSON<
     [defaults.line, linePaint],
   );
   const latestRef = useRef({ onClick, onHover });
-  latestRef.current = { onClick, onHover };
+  useEffect(() => {
+    latestRef.current = { onClick, onHover };
+  }, [onClick, onHover]);
 
   // Add source on mount.
   useEffect(() => {
@@ -2181,7 +2172,9 @@ function MapArc<T extends MapArcDatum = MapArcDatum>({
   );
 
   const latestRef = useRef({ data, onClick, onHover });
-  latestRef.current = { data, onClick, onHover };
+  useEffect(() => {
+    latestRef.current = { data, onClick, onHover };
+  }, [data, onClick, onHover]);
 
   // Add source and layers on mount.
   useEffect(() => {

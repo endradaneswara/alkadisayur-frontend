@@ -119,8 +119,6 @@ function UserManagementContent() {
   const pagination = usePagination();
   const { page, lastPage } = pagination;
 
-  const [total, setTotal] = React.useState(0);
-
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filterRole, setFilterRole] = React.useState<string>("semua");
 
@@ -145,11 +143,11 @@ function UserManagementContent() {
   React.useEffect(() => {
     if (usersQuery.data) {
       pagination.setMeta(usersQuery.data.meta);
-      setTotal(usersQuery.data.meta?.total ?? usersQuery.data.data.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usersQuery.data]);
 
+  const total = usersQuery.data?.meta?.total ?? usersQuery.data?.data.length ?? 0;
   const userList = usersQuery.data?.data ?? [];
   const isLoading = usersQuery.isLoading;
 

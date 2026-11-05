@@ -106,10 +106,6 @@ function PenjualanContent() {
   const isSuperAdmin = currentUser?.role === "superAdmin";
   const isAdmin = currentUser?.role === "admin";
 
-  React.useEffect(() => {
-    if (!isAdmin || !currentUser?.lokasi_id) return;
-    setSelectedLokasiId(currentUser.lokasi_id);
-  }, [isAdmin, currentUser]);
 
   const lokasiQuery = useQuery({
     queryKey: queryKeys.lokasi.list({ page: 1 }),

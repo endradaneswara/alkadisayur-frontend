@@ -113,15 +113,6 @@ function StoreProductsContent() {
     initialCategory && !isNaN(initialCategory) ? initialCategory : null,
   );
 
-  useEffect(() => {
-    const param =
-      searchParams.get("kategori") ?? searchParams.get("kategori_id");
-    const catId = param ? Number(param) : null;
-    if (catId && !isNaN(catId)) {
-      setSelectedCategory(catId);
-    }
-  }, [searchParams]);
-
   const heroImages = [
     { src: "/background-landing2.webp", alt: "Sayuran segar Alkadi" },
     { src: "/sayuran.webp", alt: "Pilihan sayuran segar" },
@@ -164,16 +155,17 @@ function StoreProductsContent() {
   });
 
   // Main paginated query (responds to page and selectedCategory)
+  const queryPage = debouncedSearch ? 1 : page;
   const productsQuery = useQuery({
     queryKey:
       selectedCategory === null
-        ? queryKeys.barang.list({ page })
-        : queryKeys.kategori.barang(selectedCategory, { page }),
+        ? queryKeys.barang.list({ page: queryPage })
+        : queryKeys.kategori.barang(selectedCategory, { page: queryPage }),
     queryFn: async () => {
       const response =
         selectedCategory === null
-          ? await listBarang<BarangCustomer>({ page })
-          : await listBarangByKategori(selectedCategory, { page });
+          ? await listBarang<BarangCustomer>({ page: queryPage })
+          : await listBarangByKategori(selectedCategory, { page: queryPage });
 
       return response;
     },
@@ -242,10 +234,6 @@ function StoreProductsContent() {
     ),
   });
 
-  // Reset page when category or search changes
-  useEffect(() => {
-    setPage(1);
-  }, [selectedCategory, debouncedSearch]);
 
   const lastPage = pagination?.last_page ?? 1;
 

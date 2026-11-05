@@ -26,7 +26,10 @@ export default function GoogleAuthCallbackPage() {
       clearAuthSession();
       toast.add({
         title: "Autentikasi Google gagal",
-        description: "Silakan coba login kembali.",
+        description:
+          status === "error"
+            ? "Akun Google tidak dapat ditautkan. Silakan coba lagi."
+            : "Silakan coba login kembali.",
         type: "error",
       });
       window.setTimeout(() => router.replace("/store"), 1500);
@@ -56,7 +59,7 @@ export default function GoogleAuthCallbackPage() {
       .finally(() => {
         window.setTimeout(() => router.replace("/store"), 1500);
       });
-  }, [router]);
+  }, [refreshProfile, router]);
 
   return (
     <main className="flex min-h-svh items-center justify-center bg-muted p-6">

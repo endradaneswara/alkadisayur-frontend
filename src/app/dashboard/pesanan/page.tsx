@@ -190,12 +190,6 @@ function PesananContent() {
     null,
   );
 
-  React.useEffect(() => {
-    if (!currentUser || currentUser.role !== "admin") return;
-    if (currentUser.lokasi_id) {
-      setFilterLokasi(currentUser.lokasi_id);
-    }
-  }, [currentUser]);
 
   const lokasiQuery = useQuery({
     queryKey: queryKeys.lokasi.list({ page: 1 }),
