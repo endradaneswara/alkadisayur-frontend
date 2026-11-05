@@ -5,9 +5,13 @@ import type {
   ResponsApiPaginated,
 } from "@/types";
 
-export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api"
-).replace(/\/+$/, "");
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+if (!configuredApiUrl) {
+  throw new Error("NEXT_PUBLIC_API_URL is required");
+}
+
+export const API_BASE_URL = configuredApiUrl.replace(/\/+$/, "");
 
 const API_ORIGIN = new URL(API_BASE_URL).origin;
 const AUTH_SESSION_HINT_KEY = "alkadisayur_authenticated";

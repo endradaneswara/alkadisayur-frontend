@@ -86,19 +86,8 @@ export default function CheckoutPage() {
   const cart = cartQuery.data ?? null;
   const addresses = addressesQuery.data ?? [];
   const locations = Array.isArray(locationsQuery.data) ? locationsQuery.data : [];
-
-  // Set default alamat/lokasi sekali saat data pertama tersedia.
-  useEffect(() => {
-    if (!addressId && addresses.length > 0) {
-      setAddressId(String(addresses[0].id));
-    }
-  }, [addressId, addresses]);
-
-  useEffect(() => {
-    if (!locationId && locations.length > 0) {
-      setLocationId(String(locations[0].id));
-    }
-  }, [locationId, locations]);
+  const effectiveAddressId = addressId || (addresses[0] ? String(addresses[0].id) : "");
+  const effectiveLocationId = locationId || (locations[0] ? String(locations[0].id) : "");
 
   const isLoading = cartQuery.isLoading || addressesQuery.isLoading || locationsQuery.isLoading;
   const loadError = [cartQuery.error, addressesQuery.error, locationsQuery.error].find(
@@ -109,8 +98,8 @@ export default function CheckoutPage() {
     mutationFn: async () => {
       const orderResponse = await createPesanan({
         metode: method,
-        lokasi_toko_id: Number(locationId),
-        alamat_id: method === "pesan_antar" ? Number(addressId) : null,
+        lokasi_toko_id: Number(effectiveLocationId),
+        alamat_id: method === "pesan_antar" ? Number(effectiveAddressId) : null,
         catatan: notes.trim() || null,
       });
 
@@ -153,9 +142,7 @@ export default function CheckoutPage() {
 
   const isSubmitting = submitMutation.isPending;
 
-  const selectedLocation = locations.find(
-    (location) => String(location.id) === locationId,
-  );
+  const selectedLocation = locations.find((location) => String(location.id) === effectiveLocationId);
   const deliveryFee =
     method === "pesan_antar" ? Number(selectedLocation?.biaya_pengiriman ?? 0) : 0;
   const total = Number(cart?.total_harga ?? 0) + deliveryFee;
@@ -168,11 +155,11 @@ export default function CheckoutPage() {
       setError("Keranjang Anda kosong. Tambahkan produk sebelum checkout.");
       return;
     }
-    if (!locationId) {
+    if (!effectiveLocationId) {
       setError("Pilih lokasi toko untuk memproses pesanan.");
       return;
     }
-    if (method === "pesan_antar" && !addressId) {
+    if (method === "pesan_antar" && !effectiveAddressId) {
       setError("Pilih alamat pengiriman atau tambahkan alamat baru.");
       return;
     }
@@ -293,7 +280,7 @@ export default function CheckoutPage() {
                         value: String(location.id),
                       }))}
                       onValueChange={(value) => setLocationId(value ?? "")}
-                      value={locationId}
+                      value={effectiveLocationId}
                     >
                       <SelectTrigger aria-label="Lokasi toko" id="checkout-location">
                         <SelectValue placeholder="Pilih lokasi toko" />
@@ -331,7 +318,7 @@ export default function CheckoutPage() {
                             value: String(address.id),
                           }))}
                           onValueChange={(value) => setAddressId(value ?? "")}
-                          value={addressId}
+                          value={effectiveAddressId}
                         >
                           <SelectTrigger aria-label="Alamat pengiriman" id="checkout-address">
                             <SelectValue placeholder="Pilih alamat" />
@@ -360,9 +347,9 @@ export default function CheckoutPage() {
                           </Button>
                         </div>
                       )}
-                      {addressId ? (
+                      {effectiveAddressId ? (
                         <FieldDescription>
-                          {addresses.find((address) => String(address.id) === addressId)?.alamat_lengkap}
+                          {addresses.find((address) => String(address.id) === effectiveAddressId)?.alamat_lengkap}
                         </FieldDescription>
                       ) : null}
                     </Field>

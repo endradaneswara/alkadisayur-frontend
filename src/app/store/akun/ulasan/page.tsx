@@ -66,14 +66,6 @@ export default function ReviewsPage() {
     return reviewsQuery.data?.find((review) => review.user_id === uid) ?? null;
   }, [reviewsQuery.data, uid]);
 
-  // Sinkronkan form dengan ulasan yang sudah ada saat data pertama dimuat.
-  useEffect(() => {
-    if (ownReview && !isEditing) {
-      setRating(ownReview.rating);
-      setComment(ownReview.komentar ?? "");
-    }
-  }, [ownReview, isEditing]);
-
   const isLoading = reviewsQuery.isLoading;
 
   const saveMutation = useMutation({
@@ -202,7 +194,7 @@ export default function ReviewsPage() {
                     {ownReview.komentar ? (
                       <div className="rounded-2xl border border-border bg-muted/20 p-4">
                         <p className="text-sm leading-relaxed text-muted-foreground">
-                          "{ownReview.komentar}"
+                          &quot;{ownReview.komentar}&quot;
                         </p>
                       </div>
                     ) : (
@@ -225,7 +217,11 @@ export default function ReviewsPage() {
                     <div className="flex gap-3 pt-2">
                       <Button
                         className="flex-1 gap-2"
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => {
+                          setRating(ownReview.rating);
+                          setComment(ownReview.komentar ?? "");
+                          setIsEditing(true);
+                        }}
                         variant="outline"
                       >
                         <Edit3 className="size-4" />

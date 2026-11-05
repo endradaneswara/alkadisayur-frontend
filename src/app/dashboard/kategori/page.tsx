@@ -98,7 +98,6 @@ function KategoriContent() {
   const pagination = usePagination();
   const { page, lastPage } = pagination;
 
-  const [total, setTotal] = React.useState(0);
   const [searchQuery, setSearchQuery] = React.useState("");
 
   const [listError, setListError] = React.useState<string | null>(null);
@@ -123,11 +122,11 @@ function KategoriContent() {
   React.useEffect(() => {
     if (kategoriQuery.data) {
       pagination.setMeta(kategoriQuery.data.meta);
-      setTotal(kategoriQuery.data.meta?.total ?? kategoriQuery.data.data.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kategoriQuery.data]);
 
+  const total = kategoriQuery.data?.meta?.total ?? kategoriQuery.data?.data.length ?? 0;
   const kategoriList = kategoriQuery.data?.data ?? [];
   const isLoading = kategoriQuery.isLoading;
   const error = listError ?? (kategoriQuery.error instanceof Error

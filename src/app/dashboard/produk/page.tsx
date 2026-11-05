@@ -238,7 +238,18 @@ function ProdukContent() {
   }, [isLoadingUser, currentUser, page, filterKategori, filterStatus, searchQuery]);
 
   React.useEffect(() => {
-    void loadBarang();
+    let cancelled = false;
+
+    const run = async () => {
+      await Promise.resolve();
+      if (!cancelled) await loadBarang();
+    };
+
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
   }, [loadBarang]);
 
   const handleResetFilter = () => {

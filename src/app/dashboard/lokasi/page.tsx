@@ -109,8 +109,6 @@ function LokasiContent() {
   const pagination = usePagination();
   const { page, lastPage } = pagination;
 
-  const [total, setTotal] = React.useState(0);
-
   // Filter
   const [searchQuery, setSearchQuery] = React.useState("");
 
@@ -139,11 +137,11 @@ function LokasiContent() {
   React.useEffect(() => {
     if (lokasiQuery.data) {
       pagination.setMeta(lokasiQuery.data.meta);
-      setTotal(lokasiQuery.data.meta?.total ?? lokasiQuery.data.data.length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lokasiQuery.data]);
 
+  const total = lokasiQuery.data?.meta?.total ?? lokasiQuery.data?.data.length ?? 0;
   const lokasiList = lokasiQuery.data?.data ?? [];
   const isLoading = lokasiQuery.isLoading;
 

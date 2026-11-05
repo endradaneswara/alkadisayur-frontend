@@ -124,7 +124,6 @@ function NotifikasiContent() {
   const pagination = usePagination();
   const { page, lastPage } = pagination;
 
-  const [totalUnread, setTotalUnread] = React.useState(0);
   const [isMarkingAll, setIsMarkingAll] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [deletingId, setDeletingId] = React.useState<number | null>(null);
@@ -141,14 +140,12 @@ function NotifikasiContent() {
   React.useEffect(() => {
     if (notifikasiQuery.data) {
       pagination.setMeta(notifikasiQuery.data.meta);
-      setTotalUnread(
-        notifikasiQuery.data.data.filter((n) => !n.sudah_dibaca).length,
-      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifikasiQuery.data]);
 
   const notifikasiList = notifikasiQuery.data?.data ?? [];
+  const totalUnread = notifikasiList.filter((n) => !n.sudah_dibaca).length;
   const isLoading = notifikasiQuery.isLoading;
 
   const markReadMutation = useMutation({
@@ -171,7 +168,6 @@ function NotifikasiContent() {
               }
             : current,
       );
-      setTotalUnread((prev) => Math.max(0, prev - 1));
     },
     onError: () => {
       // silently ignore
@@ -213,9 +209,13 @@ function NotifikasiContent() {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.adminNotifikasi.all,
       });
-      if (deleted && !deleted.sudah_dibaca) {
-        setTotalUnread((prev) => Math.max(0, prev - 1));
-      }
+      queryClient.setQueryData(
+        queryKeys.adminNotifikasi.list({ page }),
+        (current: ResponsApiPaginated<Notifikasi> | undefined) =>
+          current
+            ? { ...current, data: current.data.filter((n) => n.id !== deletedId) }
+            : current,
+      );
       toast.add({
         title: "Notifikasi Dihapus",
         description: "Notifikasi berhasil dihapus.",
