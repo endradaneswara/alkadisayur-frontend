@@ -9,7 +9,7 @@ import {
   ShoppingBasket,
   Truck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
 import { StoreShowcase } from "@/components/store-showcase";
@@ -23,21 +23,20 @@ export default function StoreLandingPage() {
       <main>
         <section
           aria-labelledby="hero-title"
-          className="flex flex-col items-center px-4 pt-12 pb-10 text-center sm:px-6 sm:pt-16 sm:pb-12 lg:px-10 lg:pt-20 lg:pb-16 xl:px-12"
+          className="flex flex-col items-center px-4 pb-10 pt-14 text-center sm:px-6 sm:pb-14 sm:pt-20 lg:px-10 lg:pb-16 lg:pt-24 xl:px-12"
         >
           <div className="store-enter flex max-w-3xl flex-col items-center">
-            <h1
-              className="font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl"
-              id="hero-title"
-            >
+            <h1 className="font-heading text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl" id="hero-title">
               Segarnya alam,
               <br />
               <span className="text-foreground">sampai di meja Anda.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-foreground sm:text-lg sm:leading-8">
-              Temukan sayur dan kebutuhan segar pilihan untuk setiap hidangan
-              keluarga. Belanja lebih praktis, pilih sesuai kebutuhan.
+            <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-8">
+              Temukan sayur dan kebutuhan segar pilihan untuk setiap hidangan keluarga. Belanja lebih praktis, pilih sesuai kebutuhan.
             </p>
+            <Link className={buttonVariants({ className: "mt-7 h-11 px-5 shadow-sm" })} href="/store/produk">
+              Mulai belanja <ArrowRight aria-hidden="true" />
+            </Link>
           </div>
         </section>
 

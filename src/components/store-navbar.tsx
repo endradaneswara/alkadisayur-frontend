@@ -153,6 +153,40 @@ export function StoreNavbar({
               Login
             </Button>
           ) : null}
+          <Button
+            aria-expanded={mobileMenuOpen}
+            aria-label={mobileMenuOpen ? "Tutup menu" : "Buka menu"}
+            className="lg:hidden"
+            onClick={() => setMobileMenuOpen((open) => !open)}
+            size="icon"
+            variant="ghost"
+          >
+            {mobileMenuOpen ? (
+              <X aria-hidden="true" />
+            ) : (
+              <Menu aria-hidden="true" />
+            )}
+          </Button>
+          <Button
+            aria-label={
+              cartCount > 0 ? `Keranjang, ${cartCount} item` : "Keranjang"
+            }
+            className="relative"
+            nativeButton={false}
+            render={<Link href="/store/keranjang" />}
+            variant="ghost"
+          >
+            <ShoppingCart aria-hidden="true" data-icon="inline-start" />
+            <span className="hidden sm:inline">Keranjang</span>
+            {cartCount > 0 ? (
+              <span
+                aria-hidden="true"
+                className="ml-1 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground"
+              >
+                {cartCount > 9 ? "9+" : cartCount}
+              </span>
+            ) : null}
+          </Button>
           {authStatus === "authenticated" ? (
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -217,42 +251,7 @@ export function StoreNavbar({
             </DropdownMenu>
           ) : null}
 
-          <Button
-            aria-label={
-              cartCount > 0 ? `Keranjang, ${cartCount} item` : "Keranjang"
-            }
-            className="relative"
-            nativeButton={false}
-            render={<Link href="/store/keranjang" />}
-            variant="ghost"
-          >
-            <ShoppingCart aria-hidden="true" data-icon="inline-start" />
-            <span className="hidden sm:inline">Keranjang</span>
-            {cartCount > 0 ? (
-              <span
-                aria-hidden="true"
-                className="ml-1 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground"
-              >
-                {cartCount > 9 ? "9+" : cartCount}
-              </span>
-            ) : null}
-          </Button>
-
-          <Button
-            aria-expanded={mobileMenuOpen}
-            aria-label={mobileMenuOpen ? "Tutup menu" : "Buka menu"}
-            className="lg:hidden"
-            onClick={() => setMobileMenuOpen((open) => !open)}
-            size="icon"
-            variant="ghost"
-          >
-            {mobileMenuOpen ? (
-              <X aria-hidden="true" />
-            ) : (
-              <Menu aria-hidden="true" />
-            )}
-          </Button>
-
+          <span aria-hidden="true" className="mx-2 h-6 w-px bg-border sm:mx-3" />
           <ModeToggle />
         </div>
       </div>
