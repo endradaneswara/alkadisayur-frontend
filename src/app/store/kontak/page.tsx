@@ -261,7 +261,7 @@ export default function ContactPage() {
         <section
           id="formulir-pesan"
           aria-labelledby="form-section-title"
-          className="border-y border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24"
+          className="border-y border-border bg-background py-16 sm:py-20 lg:py-24"
         >
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="grid gap-12 lg:grid-cols-[1fr_1.1fr] lg:gap-16">

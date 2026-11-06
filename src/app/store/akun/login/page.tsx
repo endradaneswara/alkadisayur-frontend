@@ -1,3 +1,4 @@
+import { Vegan } from "lucide-react"
 import { LoginForm } from "@/components/login-form"
 import Link from "next/link"
 
@@ -7,9 +8,11 @@ export default function LoginPage() {
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link
           href="/store"
-          className="self-center font-heading text-xl font-bold tracking-tight text-primary"
+          aria-label="Alkadi Sayur, beranda"
+          className="flex items-center gap-2 self-center rounded-lg font-heading text-xl font-bold tracking-tight text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
         >
-          ALKADI
+          <Vegan aria-hidden="true" className="size-6" />
+          <span>Alkadi</span>
         </Link>
         <LoginForm />
       </div>

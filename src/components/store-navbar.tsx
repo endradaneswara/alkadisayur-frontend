@@ -106,19 +106,19 @@ export function StoreNavbar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-md",
+        "sticky top-0 z-40 border-b border-border bg-background/60 backdrop-blur-md dark:border-white dark:text-[#E8F5E9]",
         className,
       )}
     >
       <div className="mx-auto flex h-[76px] max-w-[1536px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10 xl:px-12">
         <Link
           aria-label="Alkadi Sayur, beranda"
-          className="flex shrink-0 items-center gap-3 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+          className="flex shrink-0 items-center gap-3 rounded-lg text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring dark:text-[#E8F5E9]"
           href="/store"
           onClick={() => setMobileMenuOpen(false)}
         >
           <span className="flex flex-col">
-            <span className="flex items-center gap-2 font-heading text-lg leading-none font-bold tracking-tight text-primary">
+            <span className="flex items-center gap-2 font-heading text-lg leading-none font-bold tracking-tight text-primary dark:text-[#E8F5E9]">
               <Vegan className="size-6" />
               Alkadi
             </span>
@@ -132,7 +132,7 @@ export function StoreNavbar({
           {storeLinks.map((link) => (
             <Link
               key={link.href}
-              className="text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              className="text-sm font-medium text-foreground transition-colors hover:text-primary focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring dark:text-[#E8F5E9] dark:hover:text-white"
               href={link.href}
             >
               {link.label}
@@ -141,18 +141,6 @@ export function StoreNavbar({
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          {authStatus === "guest" ? (
-            <Button
-              aria-label="Login"
-              className="hidden sm:inline-flex"
-              nativeButton={false}
-              render={<Link href="/store/akun/login" />}
-              variant="ghost"
-            >
-              <UserRound aria-hidden="true" data-icon="inline-start" />
-              Login
-            </Button>
-          ) : null}
           <Button
             aria-expanded={mobileMenuOpen}
             aria-label={mobileMenuOpen ? "Tutup menu" : "Buka menu"}
@@ -187,6 +175,18 @@ export function StoreNavbar({
               </span>
             ) : null}
           </Button>
+          {authStatus === "guest" ? (
+            <Button
+              aria-label="Login"
+              className="inline-flex"
+              nativeButton={false}
+              render={<Link href="/store/akun/login" />}
+              variant="ghost"
+            >
+              <UserRound aria-hidden="true" data-icon="inline-start" />
+              <span className="hidden sm:inline">Login</span>
+            </Button>
+          ) : null}
           {authStatus === "authenticated" ? (
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -214,10 +214,6 @@ export function StoreNavbar({
                     <UserRound aria-hidden="true" />
                     Profil
                   </DropdownMenuItem>
-                  <DropdownMenuItem render={<Link href="/store/akun/alamat" />}>
-                    <MapPin aria-hidden="true" />
-                    Alamat
-                  </DropdownMenuItem>
                   <DropdownMenuItem render={<Link href="/store/pesanan" />}>
                     <ClipboardList aria-hidden="true" />
                     Pesanan
@@ -225,10 +221,6 @@ export function StoreNavbar({
                   <DropdownMenuItem render={<Link href="/store/akun/notifikasi" />}>
                     <Bell aria-hidden="true" />
                     Notifikasi
-                  </DropdownMenuItem>
-                  <DropdownMenuItem render={<Link href="/store/akun/ulasan" />}>
-                    <MessageSquare aria-hidden="true" />
-                    Ulasan
                   </DropdownMenuItem>
                   {currentUser?.role === "admin" ||
                   currentUser?.role === "superAdmin" ? (
@@ -245,13 +237,13 @@ export function StoreNavbar({
                   variant="destructive"
                 >
                   <LogOut aria-hidden="true" />
-                  {isSigningOut ? "Keluar..." : "Sign out"}
+                  {isSigningOut ? "Keluar..." : "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : null}
 
-          <span aria-hidden="true" className="mx-2 h-6 w-px bg-border sm:mx-3" />
+          <span aria-hidden="true" className="mx-2 h-6 w-px bg-border sm:mx-3 dark:bg-white" />
           <ModeToggle />
         </div>
       </div>
@@ -280,40 +272,6 @@ export function StoreNavbar({
               {link.label}
             </Link>
           ))}
-          {authStatus === "authenticated" ? (
-            <>
-              <Link
-                className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                href="/store/akun/profile"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Profil saya
-              </Link>
-              <Link
-                className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-                href="/store/pesanan"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Pesanan
-              </Link>
-              <button
-                className="rounded-lg px-3 py-2.5 text-left text-sm font-medium text-destructive hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50"
-                disabled={isSigningOut}
-                onClick={() => void handleLogout()}
-                type="button"
-              >
-                {isSigningOut ? "Keluar..." : "Sign out"}
-              </button>
-            </>
-          ) : authStatus === "guest" ? (
-            <Link
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
-              href="/store/akun/login"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Login
-            </Link>
-          ) : null}
         </nav>
       ) : null}
     </header>

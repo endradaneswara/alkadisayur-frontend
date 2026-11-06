@@ -216,7 +216,7 @@ export default function TentangKamiPage() {
         </section>
 
         {/* STATISTIK */}
-        <section className="border-b border-border bg-background dark:bg-secondary py-10 sm:py-14">
+        <section className="border-b border-border bg-background py-10 sm:py-14">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
               {stats.map((stat) => (
@@ -309,7 +309,7 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24">
+        <section className="border-y border-border bg-background py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -427,7 +427,7 @@ export default function TentangKamiPage() {
           </div>
         </section>
 
-        <section className="border-t border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24">
+        <section className="border-t border-border bg-background py-16 sm:py-20 lg:py-24">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -465,7 +465,7 @@ export default function TentangKamiPage() {
 
         <section
           aria-labelledby="reviews-title"
-          className="overflow-hidden border-t border-border bg-background dark:bg-secondary py-16 sm:py-20 lg:py-24"
+          className="overflow-hidden border-t border-border bg-background py-16 sm:py-20 lg:py-24"
         >
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="flex flex-wrap items-end justify-between gap-6">

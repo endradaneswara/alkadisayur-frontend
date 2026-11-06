@@ -1,30 +1,20 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Apple,
   ArrowRight,
-  Beef,
-  CheckCircle2,
+  ChevronLeft,
   ChevronRight,
-  Coffee,
   Flame,
   Layers,
   Leaf,
   RotateCcw,
   Search,
-  ShieldCheck,
   ShoppingBag,
-  Snowflake,
   Sparkles,
-  Truck,
-  UtensilsCrossed,
-  Wheat,
-  type LucideIcon,
 } from "lucide-react";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreNavbar } from "@/components/store-navbar";
@@ -71,32 +61,6 @@ function formatCategoryTitle(name?: string | null): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function getCategoryVisual(name: string): { image: string; icon: LucideIcon } {
-  const normalized = name.toLowerCase().trim();
-  if (normalized.includes("sayur")) {
-    return { image: "/sayuran.webp", icon: Leaf };
-  }
-  if (normalized.includes("buah")) {
-    return { image: "/sayur background1.webp", icon: Apple };
-  }
-  if (normalized.includes("bumbu")) {
-    return { image: "/bumbu-dapur.webp", icon: UtensilsCrossed };
-  }
-  if (normalized.includes("pokok")) {
-    return { image: "/sayur-background2.webp", icon: Wheat };
-  }
-  if (normalized.includes("hewan") || normalized.includes("daging")) {
-    return { image: "/hewani.webp", icon: Beef };
-  }
-  if (normalized.includes("minum") || normalized.includes("makan")) {
-    return { image: "/minuman.webp", icon: Coffee };
-  }
-  if (normalized.includes("frozen") || normalized.includes("beku")) {
-    return { image: "/frozen-food.webp", icon: Snowflake };
-  }
-  return { image: "/sayur background4.webp", icon: ShoppingBag };
-}
-
 function scrollToId(id: string) {
   const el = document.getElementById(id);
   if (el) {
@@ -114,21 +78,28 @@ function StoreProductsContent() {
   );
 
   const heroImages = [
-    { src: "/background-landing2.webp", alt: "Sayuran segar Alkadi" },
-    { src: "/sayuran.webp", alt: "Pilihan sayuran segar" },
-    { src: "/bumbu-dapur.webp", alt: "Bumbu dapur pilihan" },
+    { src: "/alkadi3.webp", alt: "Belanja kebutuhan segar Alkadi" },
+    { src: "/alkadi4.webp", alt: "Pilihan produk segar Alkadi" },
+    { src: "/alkadi5.webp", alt: "Kesegaran produk Alkadi" },
   ];
   const [heroSlide, setHeroSlide] = useState(0);
+  const [isHeroHovered, setIsHeroHovered] = useState(false);
+  const previousHeroSlide =
+    (heroSlide - 1 + heroImages.length) % heroImages.length;
+  const nextHeroSlide = (heroSlide + 1) % heroImages.length;
 
   useEffect(() => {
+    if (isHeroHovered) return;
+
     const interval = window.setInterval(() => {
       setHeroSlide((current) => (current + 1) % heroImages.length);
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [heroImages.length]);
+  }, [heroImages.length, isHeroHovered]);
 
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
 
   const debouncedSearch = useDebounce(searchTerm, 400);
@@ -176,7 +147,6 @@ function StoreProductsContent() {
   const featuredList = featuredQuery.data ?? [];
   const pagination = productsQuery.data?.meta;
   const isLoading = productsQuery.isLoading;
-  const isLoadingCategories = categoriesQuery.isLoading;
 
   const error =
     productsQuery.error instanceof Error
@@ -335,7 +305,15 @@ function StoreProductsContent() {
   function resetAllFilters(): void {
     setSelectedCategory(null);
     setSearchTerm("");
+    setSearchInput("");
     setPage(1);
+  }
+
+  function submitSearch(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    setSearchTerm(searchInput.trim());
+    setPage(1);
+    scrollToId("katalog-produk");
   }
 
   const selectedCategoryObj = categories.find((c) => c.id === selectedCategory);
@@ -347,337 +325,195 @@ function StoreProductsContent() {
 
       <main>
         <section
-          aria-labelledby="hero-title"
-          className="store-hero relative isolate -mt-[76px] flex min-h-[540px] items-center overflow-hidden sm:min-h-[620px] lg:min-h-[660px]"
+          aria-labelledby="product-hero-title"
+          className="px-4 pt-10 pb-6 text-center sm:px-6 sm:pt-14 sm:pb-8 lg:px-10"
         >
-          <div className="store-hero-background" aria-hidden="true">
-            {heroImages.map((image, index) => (
-              <Image
-                alt={image.alt}
-                className={`object-cover transition-opacity duration-1000 ${
-                  index === heroSlide ? "opacity-100" : "opacity-0"
-                }`}
-                fill
-                key={image.src}
-                priority={index === 0}
-                sizes="100vw"
-                src={image.src}
-              />
-            ))}
-          </div>
-
-          <div className="mx-auto w-full max-w-[1536px] px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:px-10 lg:pt-40 lg:pb-20 xl:px-12">
-            <div className="store-enter flex flex-col items-start max-w-3xl">
-              {/* Breadcrumb */}
-              <nav
-                aria-label="Breadcrumb"
-                className="mb-4 flex items-center gap-2 text-xs font-medium text-foreground/80 sm:text-sm"
-              >
-                <Link
-                  className="transition-colors hover:text-primary"
-                  href="/store"
-                >
-                  Beranda
-                </Link>
-                <ChevronRight aria-hidden="true" className="size-3.5" />
-                <span
-                  aria-current="page"
-                  className="font-semibold text-primary"
-                >
-                  Katalog Produk
-                </span>
-              </nav>
-
-              {/* Main Heading */}
-              <h1
-                className="mt-4 font-heading text-3xl leading-[1.12] font-semibold tracking-[-0.03em] text-primary sm:text-5xl lg:text-6xl"
-                id="hero-title"
-              >
-                Pilihan Segar &amp;
-                <br />
-                <span className="text-foreground">Kebutuhan Dapur Terbaik.</span>
-              </h1>
-
-              {/* Subtitle */}
-              <p className="mt-4 max-w-2xl text-base leading-7 text-foreground/90 sm:text-lg sm:leading-8">
-                Jelajahi aneka sayuran segar, buah pilihan, bumbu dapur tradisional,
-                hingga bahan pokok berkualitas langsung dari petani lokal terpercaya.
-              </p>
-            </div>
-
-            {/* Feature highlights grid inside Hero bottom */}
-            <div className="mt-12 grid grid-cols-2 gap-3 border-t border-border/60 pt-8 sm:grid-cols-4 sm:gap-4">
-              <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-3 backdrop-blur-sm sm:p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Leaf aria-hidden="true" className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold sm:text-sm">100% Segar</p>
-                  <p className="text-[11px] text-muted-foreground sm:text-xs">
-                    Dipetik tiap pagi
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-3 backdrop-blur-sm sm:p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <ShieldCheck aria-hidden="true" className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold sm:text-sm">Kualitas Terjaga</p>
-                  <p className="text-[11px] text-muted-foreground sm:text-xs">
-                    Sortir higienis
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-3 backdrop-blur-sm sm:p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Truck aria-hidden="true" className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold sm:text-sm">Pengiriman Cepat</p>
-                  <p className="text-[11px] text-muted-foreground sm:text-xs">
-                    Kurir khusus segar
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 p-3 backdrop-blur-sm sm:p-4">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <CheckCircle2 aria-hidden="true" className="size-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold sm:text-sm">Harga Jujur</p>
-                  <p className="text-[11px] text-muted-foreground sm:text-xs">
-                    Ramah keluarga
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="mx-auto max-w-3xl">
+            <h1
+              className="font-heading text-3xl font-semibold leading-[1.08] tracking-[-0.03em] text-primary sm:text-4xl lg:text-5xl"
+              id="product-hero-title"
+            >
+              Pilihan produk segar,
+              <br />
+              <span className="text-foreground">untuk menemani hidangan Anda.</span>
+            </h1>
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:mt-5 sm:text-base sm:leading-7">
+              Jelajahi berbagai pilihan sayur, buah, dan kebutuhan dapur berkualitas. 
+              Temukan produk favorit Anda dengan mudah.
+            </p>
           </div>
         </section>
 
-        {/* ============================================================ */}
-        {/* SECTION 2: SECTION KATEGORI DI BAWAH HERO                     */}
-        {/* ============================================================ */}
         <section
-          aria-labelledby="category-section-title"
-          className="scroll-mt-20 border-b border-border/60 bg-background dark:bg-secondary text-primary dark:text-secondary-foreground py-14 sm:py-20"
-          id="section-kategori"
+          aria-label="Slide promosi Alkadi"
+          className="mx-4 mb-14 sm:mx-6 lg:mx-10"
         >
-          <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
-            <div className="mb-9 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <p className="text-xs font-semibold tracking-[0.2em] text-primary uppercase">
-                  PILIHAN KATEGORI
-                </p>
-                <h2
-                  className="mt-2 font-heading text-2xl font-bold tracking-tight sm:text-3xl lg:text-4xl"
-                  id="category-section-title"
-                >
-                  Temukan Berdasarkan Kategori
-                </h2>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-                  Pilih kategori di bawah untuk menyaring katalog produk sesuai
-                  kebutuhan belanja harian Anda.
-                </p>
+          <div
+            className="relative mx-auto flex max-w-7xl items-center justify-center gap-4 sm:gap-6"
+            onMouseEnter={() => setIsHeroHovered(true)}
+            onMouseLeave={() => setIsHeroHovered(false)}
+          >
+            <button
+              aria-label="Lihat slide sebelumnya"
+              className="group relative hidden aspect-square w-32 shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-border/70 opacity-50 shadow-sm transition-opacity duration-300 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:block lg:w-44"
+              onClick={() => setHeroSlide(previousHeroSlide)}
+              type="button"
+            >
+              <Image
+                alt=""
+                className="object-contain transition-transform duration-500 group-hover:scale-105"
+                fill
+                loading="lazy"
+                sizes="(max-width: 1024px) 128px, 176px"
+                src={heroImages[previousHeroSlide].src}
+              />
+              <div className="absolute inset-0 bg-black/20" />
+              <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                <span className="flex size-10 items-center justify-center rounded-full bg-black/35">
+                  <ChevronLeft aria-hidden="true" className="size-6" />
+                </span>
               </div>
+            </button>
 
-              <div className="flex flex-wrap items-center gap-2">
-                {selectedCategory !== null ? (
-                  <Button
-                    className="gap-1.5"
-                    onClick={() => selectCategory(null)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <RotateCcw aria-hidden="true" className="size-3.5" />
-                    Tampilkan Semua Kategori
-                  </Button>
-                ) : null}
-                <Button
-                  className="gap-1.5"
-                  onClick={() => scrollToId("katalog-produk")}
-                  size="sm"
-                  variant="ghost"
-                >
-                  Ke Katalog Produk
-                  <ArrowRight aria-hidden="true" className="size-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Search & Filter Toolbar — above category selection cards */}
-            <div className="mb-9 flex flex-col items-stretch justify-between gap-3 rounded-2xl border border-border/80 bg-card p-3 shadow-xs sm:flex-row sm:items-center sm:p-4">
-              <div className="flex flex-1 items-center gap-3">
-                <label className="relative min-w-0 flex-1">
-                  <Search
-                    aria-hidden="true"
-                    className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+            <div className="store-hero relative isolate aspect-square w-full max-w-[calc(100%-1rem)] flex-1 overflow-hidden border border-border/70 md:max-w-3xl">
+              <div className="store-hero-background" aria-hidden="true">
+                {heroImages.map((image, index) => (
+                  <Image
+                    alt={image.alt}
+                    className={`object-contain transition-opacity duration-1000 ${
+                      index === heroSlide ? "opacity-100" : "opacity-0"
+                    }`}
+                    fill
+                    key={image.src}
+                    loading="eager"
+                    priority={index === 0}
+                    sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) calc(100vw - 3rem), 768px"
+                    src={image.src}
                   />
-                  <Input
-                    aria-label="Cari produk"
-                    className="h-10 w-full rounded-xl border-border/80 bg-background pl-10 text-sm placeholder:text-muted-foreground sm:text-base"
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Cari produk atau kategori..."
-                    type="search"
-                    value={searchTerm}
-                  />
-                </label>
-
-                <div className="w-full sm:w-56">
-                  <Select
-                    items={[
-                      { label: "Semua kategori", value: "all" },
-                      ...categories.map((c) => ({
-                        label: formatCategoryTitle(c.nama_kategori),
-                        value: String(c.id),
-                      })),
-                    ]}
-                    onValueChange={(val) => {
-                      selectCategory(
-                        !val || val === "all" ? null : Number(val),
-                      );
-                    }}
-                    value={
-                      selectedCategory === null
-                        ? "all"
-                        : String(selectedCategory)
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="Filter kategori"
-                      className="h-10 w-full rounded-xl border-border/80 bg-background"
-                    >
-                      <SelectValue placeholder="Pilih kategori" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Kategori Produk</SelectLabel>
-                        <SelectItem value="all">Semua Kategori</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={String(c.id)}>
-                            {formatCategoryTitle(c.nama_kategori)}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                ))}
               </div>
-            </div>
-
-            {categoryError ? (
-              <p
-                className="mb-6 rounded-xl border border-destructive/30 bg-card px-4 py-3 text-sm text-destructive"
-                role="alert"
-              >
-                Gagal memuat kategori: {categoryError}
-              </p>
-            ) : null}
-
-            {/* Category Cards Grid */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 sm:gap-4">
-              {/* "Semua Kategori" Card */}
               <button
-                aria-label="Tampilkan semua kategori produk"
-                aria-pressed={selectedCategory === null}
-                className={`store-category-card group relative flex min-h-[148px] flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                  selectedCategory === null
-                    ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/40"
-                    : "border-border/80 bg-card hover:border-primary/50 hover:bg-secondary/60"
-                }`}
-                onClick={() => selectCategory(null)}
+                aria-label="Lihat slide sebelumnya"
+                className="absolute left-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:hidden"
+                onClick={() => setHeroSlide(previousHeroSlide)}
                 type="button"
               >
-                <div
-                  className={`mb-3 flex size-12 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110 ${
-                    selectedCategory === null
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "bg-secondary text-primary group-hover:bg-primary group-hover:text-primary-foreground"
-                  }`}
-                >
-                  <Layers aria-hidden="true" className="size-6" />
-                </div>
-                <span className="text-xs font-semibold sm:text-sm">Semua</span>
-                <span className="mt-0.5 text-[11px] text-muted-foreground">
-                  Semua Produk
-                </span>
-                {selectedCategory === null ? (
-                  <span className="absolute top-2 right-2 flex size-2 rounded-full bg-primary" />
-                ) : null}
+                <ChevronLeft aria-hidden="true" className="size-5" />
               </button>
+              <button
+                aria-label="Lihat slide berikutnya"
+                className="absolute right-3 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm transition-colors hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:hidden"
+                onClick={() => setHeroSlide(nextHeroSlide)}
+                type="button"
+              >
+                <ChevronRight aria-hidden="true" className="size-5" />
+              </button>
+            </div>
 
-              {/* Dynamic Category Cards */}
-              {isLoadingCategories
-                ? Array.from({ length: 8 }, (_, index) => (
-                    <div
-                      className="flex min-h-[148px] flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-4"
-                      key={`category-skeleton-${index}`}
-                    >
-                      <Skeleton className="size-12 rounded-2xl" />
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-3 w-12" />
-                    </div>
-                  ))
-                : categories.map((category) => {
-                    const visual = getCategoryVisual(category.nama_kategori);
-                    const IconComponent = visual.icon;
-                    const isSelected = selectedCategory === category.id;
-
-                    return (
-                      <button
-                        aria-label={`Tampilkan kategori ${category.nama_kategori}`}
-                        aria-pressed={isSelected}
-                        className={`store-category-card group relative flex min-h-[148px] flex-col items-center justify-center overflow-hidden rounded-2xl border p-3.5 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
-                          isSelected
-                            ? "border-primary bg-primary/10 shadow-sm ring-2 ring-primary/40"
-                            : "border-border/80 bg-card hover:border-primary/50 hover:bg-secondary/60"
-                        }`}
-                        key={category.id}
-                        onClick={() =>
-                          selectCategory(isSelected ? null : category.id)
-                        }
-                        type="button"
-                      >
-                        <div className="relative mb-2.5 size-12 overflow-hidden rounded-2xl bg-secondary/80 shadow-xs ring-1 ring-border/50 transition-transform duration-300 group-hover:scale-110">
-                          <Image
-                            alt={category.nama_kategori}
-                            className="object-cover"
-                            fill
-                            sizes="48px"
-                            src={visual.image}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
-                            <IconComponent
-                              aria-hidden="true"
-                              className="size-5 text-white"
-                            />
-                          </div>
-                        </div>
-
-                        <span className="line-clamp-2 text-xs font-semibold text-foreground group-hover:text-primary sm:text-sm">
-                          {formatCategoryTitle(category.nama_kategori)}
-                        </span>
-
-                        <span className="mt-1 text-[11px] text-muted-foreground">
-                          {isSelected ? "Aktif" : "Pilih"}
-                        </span>
-
-                        {isSelected ? (
-                          <span className="absolute top-2 right-2 flex size-2 rounded-full bg-primary" />
-                        ) : null}
-                      </button>
-                    );
-                  })}
+            <button
+              aria-label="Lihat slide berikutnya"
+              className="group relative hidden aspect-square w-32 shrink-0 cursor-pointer overflow-hidden rounded-3xl border border-border/70 opacity-50 shadow-sm transition-opacity duration-300 hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 md:block lg:w-44"
+              onClick={() => setHeroSlide(nextHeroSlide)}
+              type="button"
+            >
+              <Image
+                alt=""
+                className="object-contain transition-transform duration-500 group-hover:scale-105"
+                fill
+                loading="lazy"
+                sizes="(max-width: 1024px) 128px, 176px"
+                src={heroImages[nextHeroSlide].src}
+              />
+              <div className="absolute inset-0 bg-black/20" />
+              <div className="absolute inset-0 flex items-center justify-center text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                <span className="flex size-10 items-center justify-center rounded-full bg-black/35">
+                  <ChevronRight aria-hidden="true" className="size-6" />
+                </span>
+              </div>
+            </button>
+          </div>
+          <div
+            aria-hidden="true"
+            className="mx-auto mt-6 max-w-7xl border-t border-border/70 sm:mt-8"
+          />
+          <div className="mx-auto mt-8 flex w-full max-w-3xl items-center gap-3 sm:mt-10">
+            <form
+              className="flex min-w-0 flex-1 items-center gap-2"
+              onSubmit={submitSearch}
+              role="search"
+            >
+              <label className="relative min-w-0 flex-1">
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  aria-label="Cari produk"
+                  className="h-11 w-full rounded-xl border-border/80 bg-background pl-10 text-sm placeholder:text-muted-foreground sm:text-base"
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Cari produk..."
+                  type="search"
+                  value={searchInput}
+                />
+              </label>
+              <Button
+                aria-label="Mulai pencarian"
+                className="h-11 w-11 shrink-0 rounded-xl px-0 sm:w-auto sm:gap-1.5 sm:px-4"
+                disabled={searchInput.trim() === searchTerm.trim()}
+                type="submit"
+              >
+                <Search aria-hidden="true" className="size-4" />
+                <span className="sr-only sm:not-sr-only">Cari</span>
+              </Button>
+            </form>
+            <div className="w-[36%] shrink-0 sm:w-48">
+              <Select
+                items={[
+                  { label: "Semua kategori", value: "all" },
+                  ...categories.map((c) => ({
+                    label: formatCategoryTitle(c.nama_kategori),
+                    value: String(c.id),
+                  })),
+                ]}
+                onValueChange={(val) => {
+                  selectCategory(!val || val === "all" ? null : Number(val));
+                }}
+                value={
+                  selectedCategory === null
+                    ? "all"
+                    : String(selectedCategory)
+                }
+              >
+                <SelectTrigger
+                  aria-label="Filter kategori"
+                  className="h-11 w-full rounded-xl border-border/80 bg-background"
+                >
+                  <SelectValue placeholder="Pilih kategori" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Kategori Produk</SelectLabel>
+                    <SelectItem value="all">Semua Kategori</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c.id} value={String(c.id)}>
+                        {formatCategoryTitle(c.nama_kategori)}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
+          {categoryError ? (
+            <p
+              className="mx-auto mt-3 max-w-3xl text-sm text-destructive"
+              role="alert"
+            >
+              Gagal memuat kategori: {categoryError}
+            </p>
+          ) : null}
         </section>
-
-        {/* ============================================================ */}
-        {/* SECTION 3: BEBERAPA KATALOG PRODUK DI BAWAH KATEGORI         */}
-        {/* ============================================================ */}
+        
         <section
           aria-labelledby="catalog-section-title"
           className="scroll-mt-20 py-12 sm:py-16 lg:py-20"

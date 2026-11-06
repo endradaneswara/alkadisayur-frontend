@@ -5,7 +5,7 @@ import { storeLinks } from "@/lib/store-links";
 export function StoreFooter() {
   return (
     <footer
-      className="border-t rounded-t-[1.75rem] border border-border bg-primary text-primary-foreground"
+      className="rounded-t-[1.75rem] border border-border bg-primary text-primary-foreground dark:border-white dark:bg-white dark:text-[#14501A]"
       id="kontak"
     >
       <div className="mx-auto grid max-w-[1536px] gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.3fr_0.8fr_1fr] lg:px-10 xl:px-12">
@@ -22,12 +22,12 @@ export function StoreFooter() {
               <span className="font-heading text-lg leading-none font-semibold">
                 Alkadi
               </span>
-              <span className="mt-1 text-[10px] leading-none font-medium tracking-[0.16em] uppercase opacity-75">
+              <span className="mt-1 text-[10px] leading-none font-medium tracking-[0.16em] uppercase opacity-75 dark:text-[#4F7C53] dark:opacity-100">
                 Fresh Market
               </span>
             </span>
           </Link>
-          <p className="mt-5 max-w-sm text-sm leading-6 text-primary-foreground/75">
+          <p className="mt-5 max-w-sm text-sm leading-6 text-primary-foreground/75 dark:text-[#4F7C53]">
             Temukan pilihan sayur dan kebutuhan dapur untuk menemani
             keseharian keluarga.
           </p>
@@ -41,7 +41,7 @@ export function StoreFooter() {
           >
             {storeLinks.map((link) => (
               <Link
-                className="w-fit text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+                className="w-fit text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground dark:text-[#4F7C53] dark:hover:text-[#14501A] dark:focus-visible:outline-[#14501A]"
                 href={link.href}
                 key={link.href}
               >
@@ -53,7 +53,7 @@ export function StoreFooter() {
 
         <div>
           <h2 className="font-heading text-sm font-semibold">Informasi toko</h2>
-          <div className="mt-4 flex flex-col gap-4 text-sm text-primary-foreground/75">
+          <div className="mt-4 flex flex-col gap-4 text-sm text-primary-foreground/75 dark:text-[#4F7C53]">
             <p className="flex items-start gap-3">
               <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
               <span>Jl. Raya Peniron, Kalimacan, Peniron, Pejagoan, Kebumen</span>
@@ -75,11 +75,11 @@ export function StoreFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-primary-foreground/15">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-primary-foreground/70 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+      <div className="border-t border-primary-foreground/15 dark:border-[#D7EED2]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-5 text-xs text-primary-foreground/70 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8 dark:text-[#4F7C53]">
           <p>© {new Date().getFullYear()} Alkadi Fresh Market</p>
           <a
-            className="inline-flex w-fit items-center gap-2 hover:text-primary-foreground focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground"
+            className="inline-flex w-fit items-center gap-2 hover:text-primary-foreground focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-foreground dark:hover:text-[#14501A] dark:focus-visible:outline-[#14501A]"
             href="#hero-title"
           >
             Kembali ke atas
