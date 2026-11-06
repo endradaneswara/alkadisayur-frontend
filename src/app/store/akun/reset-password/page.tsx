@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -33,7 +34,9 @@ function ResetPasswordForm() {
   const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [otp, setOtp] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -175,15 +178,12 @@ function ResetPasswordForm() {
               </Field>
               <Field data-invalid={Boolean(fieldErrors.password)}>
                 <FieldLabel htmlFor="reset-password">Password baru</FieldLabel>
-                <Input
-                  id="reset-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  aria-invalid={Boolean(fieldErrors.password)}
-                />
+                <div className="relative">
+                  <Input id="reset-password" type={showPassword ? "text" : "password"} autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} required className="pr-10" aria-invalid={Boolean(fieldErrors.password)} />
+                  <button type="button" className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"} aria-pressed={showPassword}>
+                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+                  </button>
+                </div>
                 {fieldErrors.password?.[0] ? (
                   <p className="text-sm text-destructive">
                     {fieldErrors.password[0]}
@@ -198,17 +198,12 @@ function ResetPasswordForm() {
                 <FieldLabel htmlFor="reset-password-confirmation">
                   Konfirmasi password baru
                 </FieldLabel>
-                <Input
-                  id="reset-password-confirmation"
-                  type="password"
-                  autoComplete="new-password"
-                  value={passwordConfirmation}
-                  onChange={(event) =>
-                    setPasswordConfirmation(event.target.value)
-                  }
-                  required
-                  aria-invalid={Boolean(fieldErrors.password_confirmation)}
-                />
+                <div className="relative">
+                  <Input id="reset-password-confirmation" type={showPasswordConfirmation ? "text" : "password"} autoComplete="new-password" value={passwordConfirmation} onChange={(event) => setPasswordConfirmation(event.target.value)} required className="pr-10" aria-invalid={Boolean(fieldErrors.password_confirmation)} />
+                  <button type="button" className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setShowPasswordConfirmation((visible) => !visible)} aria-label={showPasswordConfirmation ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"} aria-pressed={showPasswordConfirmation}>
+                    {showPasswordConfirmation ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+                  </button>
+                </div>
                 {fieldErrors.password_confirmation?.[0] ? (
                   <p className="text-sm text-destructive">
                     {fieldErrors.password_confirmation[0]}

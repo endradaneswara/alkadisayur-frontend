@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { Eye, EyeOff } from "lucide-react"
 
 import { cn } from "cn"
 
@@ -35,6 +36,7 @@ export function LoginForm({
   const { refreshProfile } = useAuth();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleRedirecting, setIsGoogleRedirecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export function LoginForm({
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <Card>
+      <Card className="border border-border shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-xl">Selamat Datang</CardTitle>
           <CardDescription>
@@ -151,18 +153,30 @@ export function LoginForm({
                     Lupa password anda?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  required
-                  autoComplete="current-password"
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={
-                    fieldErrors.password ? "password-error" : undefined
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    autoComplete="current-password"
+                    className="pr-10"
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={
+                      fieldErrors.password ? "password-error" : undefined
+                    }
+                  />
+                  <button
+                    type="button"
+                    className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    onClick={() => setShowPassword((visible) => !visible)}
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    aria-pressed={showPassword}
+                  >
+                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+                  </button>
+                </div>
                 {fieldErrors.password?.[0] ? (
                   <p
                     id="password-error"
@@ -183,6 +197,9 @@ export function LoginForm({
                   </p>
                 </Field>
               ) : null}
+              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+                Masuk dengan akun Anda
+              </FieldSeparator>
               <Field>
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? "Memproses..." : "Login"}

@@ -243,7 +243,7 @@ export default function LokasiPage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-background dark:bg-secondary py-16 sm:py-20">
+        <section className="border-y border-border bg-background py-16 sm:py-20">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff, Vegan } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +18,7 @@ import {
   FieldDescription,
   FieldGroup,
   FieldLabel,
+  FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/toast";
@@ -32,6 +34,9 @@ export function SignupForm({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] =
+    useState(false);
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -101,11 +106,13 @@ export function SignupForm({
     <div className="flex flex-col gap-6">
       <Link
         href="/store"
-        className="self-center font-heading text-xl font-bold tracking-tight text-primary"
+        aria-label="Alkadi Sayur, beranda"
+        className="flex items-center gap-2 self-center rounded-lg font-heading text-xl font-bold tracking-tight text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
       >
-        ALKADI
+        <Vegan aria-hidden="true" className="size-6" />
+        <span>Alkadi</span>
       </Link>
-      <Card {...props}>
+      <Card className="border border-border shadow-lg" {...props}>
         <CardHeader>
           <CardTitle>Register akun</CardTitle>
           <CardDescription>
@@ -172,18 +179,22 @@ export function SignupForm({
               </Field>
               <Field data-invalid={Boolean(fieldErrors.password)}>
                 <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="new-password"
-                  required
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={
-                    fieldErrors.password ? "password-error" : undefined
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="new-password"
+                    required
+                    className="pr-10"
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={fieldErrors.password ? "password-error" : undefined}
+                  />
+                  <button type="button" className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"} aria-pressed={showPassword}>
+                    {showPassword ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+                  </button>
+                </div>
                 {fieldErrors.password?.[0] ? (
                   <p
                     id="password-error"
@@ -202,22 +213,22 @@ export function SignupForm({
                 <FieldLabel htmlFor="confirm-password">
                   Konfirmasi password
                 </FieldLabel>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={passwordConfirmation}
-                  onChange={(event) =>
-                    setPasswordConfirmation(event.target.value)
-                  }
-                  autoComplete="new-password"
-                  required
-                  aria-invalid={Boolean(fieldErrors.password_confirmation)}
-                  aria-describedby={
-                    fieldErrors.password_confirmation
-                      ? "password-confirmation-error"
-                      : undefined
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    id="confirm-password"
+                    type={showPasswordConfirmation ? "text" : "password"}
+                    value={passwordConfirmation}
+                    onChange={(event) => setPasswordConfirmation(event.target.value)}
+                    autoComplete="new-password"
+                    required
+                    className="pr-10"
+                    aria-invalid={Boolean(fieldErrors.password_confirmation)}
+                    aria-describedby={fieldErrors.password_confirmation ? "password-confirmation-error" : undefined}
+                  />
+                  <button type="button" className="absolute top-1/2 right-1 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring" onClick={() => setShowPasswordConfirmation((visible) => !visible)} aria-label={showPasswordConfirmation ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"} aria-pressed={showPasswordConfirmation}>
+                    {showPasswordConfirmation ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+                  </button>
+                </div>
                 {fieldErrors.password_confirmation?.[0] ? (
                   <p
                     id="password-confirmation-error"
@@ -240,6 +251,9 @@ export function SignupForm({
                   </p>
                 </Field>
               ) : null}
+              <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
+                Buat akun Anda
+              </FieldSeparator>
               <Field>
                 <Button disabled={isSubmitting} type="submit">
                   {isSubmitting ? "Memproses..." : "Buat akun"}
