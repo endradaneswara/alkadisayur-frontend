@@ -5,8 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   Bell,
   ClipboardList,
-  MapPin,
-  MessageSquare,
   UserRound,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,22 +13,16 @@ interface AccountTab {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: number;
 }
 
 const accountTabs: AccountTab[] = [
   {
-    label: "Profil Saya",
+    label: "Profile",
     href: "/store/akun/profile",
     icon: UserRound,
   },
   {
-    label: "Daftar Alamat",
-    href: "/store/akun/alamat",
-    icon: MapPin,
-  },
-  {
-    label: "Pesanan Saya",
+    label: "Pesanan",
     href: "/store/pesanan",
     icon: ClipboardList,
   },
@@ -39,24 +31,17 @@ const accountTabs: AccountTab[] = [
     href: "/store/akun/notifikasi",
     icon: Bell,
   },
-  {
-    label: "Ulasan Toko",
-    href: "/store/akun/ulasan",
-    icon: MessageSquare,
-  },
 ];
 
 interface StoreAccountNavProps {
   title?: string;
   description?: string;
-  badge?: string;
   action?: React.ReactNode;
 }
 
 export function StoreAccountNav({
   title,
   description,
-  badge = "Akun Saya",
   action,
 }: StoreAccountNavProps) {
   const pathname = usePathname();
@@ -85,11 +70,8 @@ export function StoreAccountNav({
 
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
-            {badge}
-          </span>
           {title ? (
-            <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
               {title}
             </h1>
           ) : null}
@@ -99,7 +81,6 @@ export function StoreAccountNav({
             </p>
           ) : null}
         </div>
-
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
 

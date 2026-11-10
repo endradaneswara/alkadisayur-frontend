@@ -112,7 +112,7 @@ export default function LokasiPage() {
       <main>
         <section
           aria-labelledby="lokasi-hero-title"
-          className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
+          className="store-hero relative isolate mx-4 mt-4 flex min-h-[600px] items-center overflow-hidden sm:mx-6 sm:mt-6 sm:min-h-[680px] lg:mx-10 lg:mt-8 lg:min-h-[720px]"
         >
           <div className="store-hero-background" aria-hidden="true">
             <Image
@@ -125,7 +125,7 @@ export default function LokasiPage() {
             />
           </div>
 
-          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-24 xl:px-12">
+          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-16 pb-14 sm:px-6 sm:pt-20 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pt-24 lg:pb-24 xl:px-12">
             <div className="store-enter flex flex-col items-start">
               <h1
                 className="mt-4 max-w-2xl font-heading text-4xl leading-[1.08] font-semibold tracking-[-0.04em] text-primary sm:text-5xl lg:text-6xl"
@@ -243,7 +243,7 @@ export default function LokasiPage() {
           </div>
         </section>
 
-        <section className="border-y border-border bg-background py-16 sm:py-20">
+        <section className=" border-border bg-background py-16 sm:py-20">
           <div className="mx-auto max-w-[1536px] px-4 sm:px-6 lg:px-10 xl:px-12">
             <div className="mx-auto max-w-2xl text-center">
               <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
@@ -348,7 +348,7 @@ export default function LokasiPage() {
                       </MapMarker>
                     );
                   })
-                : 
+                :
                   branchSlides.map((branch) => {
                     const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                       `${branch.lat},${branch.lng}`,

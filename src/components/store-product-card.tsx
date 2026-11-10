@@ -2,15 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ImagePlus, Package, Plus } from "lucide-react";
+import { ImagePlus, Plus } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useCart } from "@/hooks/useCart";
 import { hasAuthSession } from "@/services/api";
-import { getErrorMessage, getProductImageUrl, formatRupiah, isProductAvailable } from "@/lib/store-catalog";
+import { getProductImageUrl, formatRupiah, isProductAvailable } from "@/lib/store-catalog";
 import type { BarangCustomer } from "@/types";
 
 function formatCategory(name?: string | null): string {
@@ -19,7 +19,6 @@ function formatCategory(name?: string | null): string {
 }
 
 export function StoreProductCard({ product }: { product: BarangCustomer }) {
-  const router = useRouter();
   const [imageFailed, setImageFailed] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackIsError, setFeedbackIsError] = useState(false);
@@ -28,7 +27,11 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
 
   async function handleAddToCart(): Promise<void> {
     if (!hasAuthSession()) {
-      router.push("/store/akun/login");
+      toast.add({
+        title: "Login terlebih dahulu",
+        description: "Silakan login untuk menambahkan barang ke keranjang.",
+        type: "warning",
+      });
       return;
     }
 
@@ -83,23 +86,12 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           </Badge>
         </div>
 
-        {product.Stok !== undefined && product.Stok !== null ? (
-          <div className="absolute top-2.5 right-2.5 z-10">
-            <span className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/85 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-xs backdrop-blur-xs sm:text-[11px]">
-              <Package className="size-3 text-primary" />
-              <span>{product.Stok}</span>
-            </span>
-          </div>
-        ) : null}
       </div>
 
       <CardContent className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-1.5">
           <span className="inline-block max-w-[65%] truncate rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-primary uppercase sm:text-[11px]">
             {formatCategory(product.nama_kategori)}
-          </span>
-          <span className="shrink-0 text-[11px] text-muted-foreground">
-            Stok: <strong className="text-foreground">{product.Stok ?? (isAvailable ? "Tersedia" : 0)}</strong>
           </span>
         </div>
 
@@ -124,7 +116,6 @@ export function StoreProductCard({ product }: { product: BarangCustomer }) {
           className="h-9 w-full gap-1.5 rounded-xl text-xs font-medium sm:text-sm"
           disabled={!isAvailable || isAdding}
           onClick={() => void handleAddToCart()}
-          type="button"
         >
           {isAdding ? (
             "Menambahkan..."

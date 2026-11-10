@@ -146,7 +146,6 @@ export default function NotificationsPage() {
         {/* Navigation Tabs Header */}
         <StoreAccountNav
           title="Notifikasi"
-          badge="Pemberitahuan"
           description="Dapatkan kabar terbaru seputar perkembangan status pesanan, pembayaran, dan informasi toko Alkadi."
           action={
             unreadCount > 0 ? (

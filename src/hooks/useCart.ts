@@ -136,7 +136,7 @@ export function useCart(): UseCartResult {
   return {
     cart,
     items: cart?.items ?? [],
-    totalItem: cart?.total_item ?? 0,
+    totalItem: cart?.items ? cart.items.length : (cart?.total_item ?? 0),
     totalHarga,
     isLoading: cartQuery.isLoading,
     isError: cartQuery.isError,

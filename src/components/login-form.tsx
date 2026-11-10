@@ -198,7 +198,7 @@ export function LoginForm({
                 </Field>
               ) : null}
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                Masuk dengan akun Anda
+                Masuk dengan akun
               </FieldSeparator>
               <Field>
                 <Button type="submit" disabled={isSubmitting}>

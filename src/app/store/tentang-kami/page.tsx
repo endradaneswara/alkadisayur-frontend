@@ -134,7 +134,7 @@ export default function TentangKamiPage() {
       <main>
         <section
           aria-labelledby="about-hero-title"
-          className="store-hero relative isolate -mt-[76px] flex min-h-[600px] items-center overflow-hidden sm:min-h-[680px] lg:min-h-[720px]"
+          className="store-hero relative isolate mx-4 mt-4 flex min-h-[600px] items-center overflow-hidden border border-border/70 sm:mx-6 sm:mt-6 sm:min-h-[680px] lg:mx-10 lg:mt-8 lg:min-h-[720px]"
         >
           <div className="store-hero-background" aria-hidden="true">
             <Image
@@ -147,7 +147,7 @@ export default function TentangKamiPage() {
             />
           </div>
 
-          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-28 pb-14 sm:px-6 sm:pt-36 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pt-40 lg:pb-24 xl:px-12">
+          <div className="mx-auto grid w-full max-w-[1536px] items-center gap-12 px-4 pt-16 pb-14 sm:px-6 sm:pt-20 sm:pb-20 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-10 lg:pt-24 lg:pb-24 xl:px-12">
             <div className="store-enter flex flex-col items-start">
 
               <h1

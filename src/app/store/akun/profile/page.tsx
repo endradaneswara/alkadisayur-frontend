@@ -3,34 +3,35 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  Calendar,
-  CheckCircle2,
+  Bell,
+  CalendarCheck,
   ClipboardList,
   Edit3,
   Mail,
-  MapPin,
-  MessageSquare,
   Phone,
   Shield,
-  UserRound,
 } from "lucide-react";
 
 import { ProfileEditSheet } from "@/components/profile-edit-sheet";
+import { ProfileAddressManager } from "@/components/profile-address-manager";
 import { StoreAccountNav } from "@/components/store-account-nav";
 import { StorePageShell } from "@/components/store-page-shell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
-import type { PenggunaLogin } from "@/types";
+
+function formatVerifiedDate(value: string | null | undefined): string {
+  if (!value) return "Belum terverifikasi";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Belum terverifikasi";
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 export default function ProfilePage() {
   const { currentUser, isLoading, refreshProfile } = useAuth();
@@ -42,19 +43,8 @@ export default function ProfilePage() {
     <StorePageShell>
       <div className="w-full">
         <StoreAccountNav
-          title="Profil Saya"
-          badge="Informasi Akun"
+          title="Profile Saya"
           description="Kelola informasi profil, kontak aktif, dan preferensi akun belanja Anda di Alkadi."
-          action={
-            <Button
-              onClick={() => setIsSheetOpen(true)}
-              type="button"
-              className="gap-2"
-            >
-              <Edit3 className="size-4" />
-              Edit Profil
-            </Button>
-          }
         />
 
         {isLoading ? (
@@ -63,11 +53,11 @@ export default function ProfilePage() {
             <Skeleton className="h-48 w-full rounded-3xl" />
           </div>
         ) : (
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-10">
             {/* Kartu Profil Utama Lebar Penuh */}
             <Card className="overflow-hidden border border-border/80 shadow-xs">
               {/* Cover Banner */}
-              <div className="h-32 bg-gradient-to-r from-primary/30 via-primary/15 to-primary/5 sm:h-40" />
+              <div className="h-32" />
 
               <div className="relative px-6 pb-6 sm:px-8">
                 {/* Avatar Mengambang */}
@@ -97,14 +87,10 @@ export default function ProfilePage() {
                 {/* Info Identitas */}
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <div className="flex items-center gap-3">
+                    <div>
                       <h2 className="font-heading text-2xl font-bold text-foreground sm:text-3xl">
                         {currentUser?.name ?? "Pelanggan Alkadi"}
                       </h2>
-                      <Badge className="bg-primary/10 text-primary border border-primary/20 capitalize font-semibold">
-                        <CheckCircle2 className="mr-1 size-3" />
-                        {currentUser?.role ?? "Customer"}
-                      </Badge>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">
                       {currentUser?.email ?? "-"}
@@ -156,12 +142,12 @@ export default function ProfilePage() {
 
                   <div className="flex items-center gap-3.5 rounded-2xl border border-border/80 bg-muted/20 p-4 transition-colors hover:border-primary/40">
                     <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Calendar className="size-5" />
+                      <CalendarCheck className="size-5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">Bergabung Sejak</p>
+                      <p className="text-xs text-muted-foreground">Tanggal Bergabung</p>
                       <p className="font-semibold text-sm text-foreground">
-                        Aktif
+                        {formatVerifiedDate(currentUser?.email_verified_at)}
                       </p>
                     </div>
                   </div>
@@ -169,67 +155,9 @@ export default function ProfilePage() {
               </div>
             </Card>
 
-            {/* Pintasan Fitur Akun Lainnya (Kartu Akses Cepat Lebar) */}
-            <div>
-              <h3 className="mb-4 font-heading text-lg font-bold text-foreground">
-                Pintasan Fitur Akun
-              </h3>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Link
-                  href="/store/pesanan"
-                  className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-5 transition-all duration-200 hover:border-primary hover:shadow-md"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <ClipboardList className="size-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">Pesanan Saya</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Lihat status dan riwayat transaksi
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-primary">Buka →</span>
-                </Link>
+            {/* Kelola Alamat Pengiriman Pengguna */}
+            <ProfileAddressManager />
 
-                <Link
-                  href="/store/akun/alamat"
-                  className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-5 transition-all duration-200 hover:border-primary hover:shadow-md"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-secondary/30 text-primary">
-                      <MapPin className="size-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">Daftar Alamat</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Atur alamat tujuan pengiriman
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-primary">Buka →</span>
-                </Link>
-
-                <Link
-                  href="/store/akun/ulasan"
-                  className="flex items-center justify-between rounded-2xl border border-border/80 bg-card p-5 transition-all duration-200 hover:border-primary hover:shadow-md"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div className="flex size-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <MessageSquare className="size-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-foreground">Ulasan Toko</h4>
-                      <p className="text-xs text-muted-foreground">
-                        Bagikan penilaian dan pengalaman Anda
-                      </p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-primary">Buka →</span>
-                </Link>
-              </div>
-            </div>
           </div>
         )}
 

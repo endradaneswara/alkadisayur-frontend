@@ -7,6 +7,10 @@ import type {
   ResponsApiPaginated,
 } from '@/types';
 
+export interface BarangListParams extends PaginationParams {
+  search?: string;
+}
+
 export interface BarangPayload {
   kategori_id: number;
   KodeItem: string;
@@ -25,7 +29,7 @@ export interface BarangPayload {
 }
 
 export function listBarang<T extends Barang | BarangCustomer = BarangCustomer>(
-  params?: PaginationParams,
+  params?: BarangListParams,
 ): Promise<ResponsApiPaginated<T>> {
   return requestPaginated<T>('/barang', params);
 }

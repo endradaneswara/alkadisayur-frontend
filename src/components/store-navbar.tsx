@@ -8,8 +8,6 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
-  MapPin,
-  MessageSquare,
   Menu,
   ShoppingCart,
   UserRound,
@@ -37,16 +35,11 @@ import { storeLinks } from "@/lib/store-links";
 import { clearAuthSession, hasAuthSession } from "@/services/api";
 import { logout } from "@/services/authService";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/hooks/useCart";
 
-interface StoreNavbarProps {
-  cartCount?: number;
-  className?: string;
-}
 
-export function StoreNavbar({
-  cartCount = 0,
-  className,
-}: StoreNavbarProps) {
+export function StoreNavbar({ className }: { className?: string }) {
+  const { totalItem } = useCart();
   const router = useRouter();
   const { currentUser, isLoading, isAuthenticated, clearUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -157,7 +150,7 @@ export function StoreNavbar({
           </Button>
           <Button
             aria-label={
-              cartCount > 0 ? `Keranjang, ${cartCount} item` : "Keranjang"
+              totalItem > 0 ? `Keranjang, ${totalItem} item` : "Keranjang"
             }
             className="relative"
             nativeButton={false}
@@ -165,13 +158,12 @@ export function StoreNavbar({
             variant="ghost"
           >
             <ShoppingCart aria-hidden="true" data-icon="inline-start" />
-            <span className="hidden sm:inline">Keranjang</span>
-            {cartCount > 0 ? (
+            {totalItem > 0 ? (
               <span
                 aria-hidden="true"
                 className="ml-1 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground"
               >
-                {cartCount > 9 ? "9+" : cartCount}
+                {totalItem > 9 ? "9+" : totalItem}
               </span>
             ) : null}
           </Button>

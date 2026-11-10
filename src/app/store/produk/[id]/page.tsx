@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, Plus } from "lucide-react";
+import { toast } from "@/components/ui/toast";
 import { StoreFooter } from "@/components/store-footer";
 import { StoreErrorBanner } from "@/components/store-error-banner";
 import { StoreNavbar } from "@/components/store-navbar";
@@ -29,7 +30,6 @@ export default function StoreProductPage() {
   const params = useParams<{ id: string }>();
   const productId = Number(params.id);
   const isValidProductId = Number.isInteger(productId) && productId > 0;
-  const router = useRouter();
   const [imageFailed, setImageFailed] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [feedbackIsError, setFeedbackIsError] = useState(false);
@@ -57,7 +57,11 @@ export default function StoreProductPage() {
     }
 
     if (!hasAuthSession()) {
-      router.push("/store/akun/login");
+      toast.add({
+        title: "Login terlebih dahulu",
+        description: "Silakan login untuk menambahkan barang ke keranjang.",
+        type: "warning",
+      });
       return;
     }
 
