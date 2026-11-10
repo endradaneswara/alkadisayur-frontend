@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useSyncExternalStore } from "react";
 import {
   ArrowRight,
   Leaf,
@@ -23,7 +23,6 @@ import { toast } from "@/components/ui/toast";
 import { useCart } from "@/hooks/useCart";
 import { useConfirmDialog } from "@/hooks/useConfirmDialog";
 import { formatRupiah } from "@/lib/store-catalog";
-import { hasAuthSession } from "@/services/api";
 
 export default function CartPage() {
   const router = useRouter();
@@ -39,12 +38,11 @@ export default function CartPage() {
   } = useCart();
   const confirmDialog = useConfirmDialog();
   const isUpdating = confirmDialog.isPending;
-
-  useEffect(() => {
-    if (!hasAuthSession()) {
-      router.replace("/store");
-    }
-  }, [router]);
+  const isMounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 
   async function changeQuantity(itemId: number, quantity: number): Promise<void> {
     if (quantity < 1) return;
@@ -112,19 +110,16 @@ export default function CartPage() {
             Beranda
           </Link>
           <span>/</span>
-          <span className="font-medium text-foreground">Keranjang Belanja</span>
+          <span className="font-medium text-foreground">Keranjang</span>
         </nav>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-              Belanja Anda
-            </span>
             <h1 className="mt-1 font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Keranjang Belanja
+              Keranjang
             </h1>
           </div>
           {cart && cart.items.length > 0 && (
-            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground">
               <ShoppingCart className="size-4 text-primary" />
               {cart.total_item} produk dalam keranjang
             </span>
@@ -138,7 +133,7 @@ export default function CartPage() {
       )}
 
       {/* Loading Skeleton */}
-      {isLoading && (
+      {isMounted && isLoading && (
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
           <div className="space-y-4">
             {Array.from({ length: 3 }, (_, i) => (
@@ -150,17 +145,16 @@ export default function CartPage() {
       )}
 
       {/* Keranjang Kosong */}
-      {!isLoading && !error && items.length === 0 && (
+      {isMounted && !isLoading && !error && items.length === 0 && (
         <StoreEmptyState
           action={{ label: "Mulai Belanja", onClick: () => router.push("/store/produk") }}
-          description="Temukan sayuran segar, buah pilihan, dan kebutuhan dapur terbaik di toko kami."
           icon={ShoppingCart}
           title="Keranjang Masih Kosong"
         />
       )}
 
       {/* Konten Keranjang */}
-      {!isLoading && !error && cart && items.length > 0 && (
+      {isMounted && !isLoading && !error && cart && items.length > 0 && (
         <div className="grid items-start gap-8 lg:grid-cols-[1fr_380px]">
           {/* Kolom Kiri: Daftar Produk */}
           <section aria-label="Produk dalam keranjang" className="flex flex-col gap-4">
@@ -186,12 +180,9 @@ export default function CartPage() {
 
                 {/* Info Produk */}
                 <div className="min-w-0 flex-1">
-                  <Link
-                    href={`/store/produk/${item.barang_id}`}
-                    className="block font-heading font-semibold text-foreground hover:text-primary transition-colors sm:text-lg"
-                  >
+                  <span className="block font-heading font-semibold text-foreground sm:text-lg">
                     {item.nama_barang ?? "Produk Alkadi"}
-                  </Link>
+                  </span>
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     {formatRupiah(item.harga)} / satuan
                   </p>

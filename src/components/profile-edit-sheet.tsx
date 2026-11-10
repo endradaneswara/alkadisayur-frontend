@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { KeyRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -14,6 +16,9 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { toast } from "@/components/ui/toast";
+import { ApiError } from "@/services/apiError";
+import { forgotPassword } from "@/services/passwordService";
 import { updateProfile } from "@/services/profileService";
 import type { PenggunaLogin } from "@/types";
 
@@ -30,12 +35,14 @@ export function ProfileEditSheet({
   user,
   onSave,
 }: ProfileEditSheetProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState(() => ({
     name: user?.name ?? "",
     email: user?.email ?? "",
     no_hp: user?.no_hp ?? "",
   }));
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -61,6 +68,11 @@ export function ProfileEditSheet({
       }
 
       onOpenChange(false);
+      toast.add({
+        title: "Profil diperbarui",
+        description: "Data profil Anda berhasil disimpan.",
+        type: "success",
+      });
     } catch (error: unknown) {
       const message =
         error instanceof Error
@@ -72,20 +84,55 @@ export function ProfileEditSheet({
     }
   }
 
+  async function handleResetPassword() {
+    const email = (formData.email || user?.email || "").trim();
+    if (!email) {
+      setErrorMessage("Email harus diisi untuk mengirim kode OTP reset password.");
+      return;
+    }
+
+    setIsSendingOtp(true);
+    setErrorMessage(null);
+
+    try {
+      await forgotPassword(email);
+      toast.add({
+        title: "Kode OTP dikirim",
+        description: `Kode OTP reset password telah dikirim ke ${email}.`,
+        type: "success",
+      });
+      onOpenChange(false);
+      router.push(`/store/akun/forgot-password?email=${encodeURIComponent(email)}&step=otp`);
+    } catch (error: unknown) {
+      const apiError = error instanceof ApiError ? error : null;
+      const message =
+        apiError?.message ??
+        (error instanceof Error ? error.message : "Gagal meminta kode OTP reset password.");
+      setErrorMessage(message);
+      toast.add({
+        title: "Gagal meminta kode OTP",
+        description: message,
+        type: "error",
+      });
+    } finally {
+      setIsSendingOtp(false);
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle>Edit profil</SheetTitle>
+          <SheetTitle>Edit Profil</SheetTitle>
           <SheetDescription>
-            Lakukan perubahan pada profil Anda di sini. Klik simpan setelah selesai.
+            Lakukan perubahan pada data akun Anda di sini. Klik simpan setelah selesai.
           </SheetDescription>
         </SheetHeader>
 
         <form className="flex flex-1 flex-col gap-6 px-4" onSubmit={handleSubmit}>
           <FieldGroup>
             <Field>
-              <FieldLabel htmlFor="profile-name">Nama</FieldLabel>
+              <FieldLabel htmlFor="profile-name">Nama Lengkap</FieldLabel>
               <Input
                 id="profile-name"
                 value={formData.name}
@@ -95,6 +142,7 @@ export function ProfileEditSheet({
                     name: event.target.value,
                   }))
                 }
+                required
               />
             </Field>
 
@@ -110,11 +158,12 @@ export function ProfileEditSheet({
                     email: event.target.value,
                   }))
                 }
+                required
               />
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="profile-phone">Nomor HP</FieldLabel>
+              <FieldLabel htmlFor="profile-phone">Nomor HP / WhatsApp</FieldLabel>
               <Input
                 id="profile-phone"
                 type="tel"
@@ -125,8 +174,30 @@ export function ProfileEditSheet({
                     no_hp: event.target.value,
                   }))
                 }
+                placeholder="Contoh: 08123456789"
               />
             </Field>
+
+            {/* Bagian Keamanan / Reset Password */}
+            <div className="rounded-2xl border border-border/80 bg-muted/20 p-4">
+              <div className="space-y-1">
+                <p className="font-semibold text-sm text-foreground">Keamanan & Password</p>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Ingin mengatur ulang kata sandi? Kami akan mengirimkan 6 digit kode OTP verifikasi langsung ke email Anda.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={isSendingOtp}
+                onClick={handleResetPassword}
+                className="mt-3 gap-2 text-xs"
+              >
+                <KeyRound className="size-3.5" />
+                {isSendingOtp ? "Mengirim OTP..." : "Reset Password via OTP"}
+              </Button>
+            </div>
 
             {errorMessage ? (
               <Field>
@@ -142,10 +213,10 @@ export function ProfileEditSheet({
 
           <SheetFooter className="px-0">
             <SheetClose render={<Button type="button" variant="outline" />}>
-              Tutup
+              Batal
             </SheetClose>
             <Button disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Menyimpan..." : "Simpan perubahan"}
+              {isSubmitting ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
           </SheetFooter>
         </form>

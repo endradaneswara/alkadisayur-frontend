@@ -15,7 +15,6 @@ import { StoreNavbar } from "@/components/store-navbar";
 import { StoreShowcase } from "@/components/store-showcase";
 
 export default function StoreLandingPage() {
-  const cartCount = 0;
   const benefitGridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -40,7 +39,7 @@ export default function StoreLandingPage() {
 
   return (
     <div className="store-landing min-h-screen bg-background text-foreground">
-      <StoreNavbar cartCount={cartCount} />
+      <StoreNavbar />
       <main>
         <section
           aria-labelledby="hero-title"

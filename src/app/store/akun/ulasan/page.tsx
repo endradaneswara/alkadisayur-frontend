@@ -143,7 +143,6 @@ export default function ReviewsPage() {
       <div className="w-full">
         <StoreAccountNav
           title="Ulasan Toko"
-          badge="Kepuasan Pelanggan"
           description="Bagikan pengalaman belanja Anda untuk membantu kami terus meningkatkan kualitas layanan Alkadi."
         />
 

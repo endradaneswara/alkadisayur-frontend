@@ -105,7 +105,6 @@ export default function OrdersPage() {
         {/* Navigation Tabs Header */}
         <StoreAccountNav
           title="Pesanan Saya"
-          badge="Riwayat Belanja"
           description="Pantau perkembangan pesanan sayur segar, status pengiriman kurir, dan riwayat belanja lengkap Anda."
           action={
             <Button
@@ -183,7 +182,7 @@ export default function OrdersPage() {
         {!isLoading && !error && filteredOrders.length === 0 ? (
           <StoreEmptyState
             action={{
-              label: "Mulai Belanja Segar",
+              label: "Belanja",
               onClick: () => router.push("/store/produk"),
             }}
             className="border border-border/80 bg-card/60 backdrop-blur-xs"

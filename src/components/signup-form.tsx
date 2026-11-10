@@ -252,7 +252,7 @@ export function SignupForm({
                 </Field>
               ) : null}
               <FieldSeparator className="*:data-[slot=field-separator-content]:bg-card">
-                Buat akun Anda
+                Buat akun
               </FieldSeparator>
               <Field>
                 <Button disabled={isSubmitting} type="submit">

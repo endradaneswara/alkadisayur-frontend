@@ -17,10 +17,6 @@ type EmptyStateProps = {
   className?: string;
 };
 
-/**
- * Empty state store yang konsisten: ikon, judul, deskripsi, dan CTA opsional.
- * Dipakai keranjang, pesanan, checkout, dan katalog produk.
- */
 export function StoreEmptyState({
   icon: Icon,
   title,
